@@ -49,7 +49,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         with Pool() as p:
             data_list = p.map(self.create_data_obj, mnist)
         t = time.time() - t
-        print('Done in {t}s')
+        print(f'Done in {t}s')
         return self.collate(data_list)
 
     def create_data_obj(self, d):
