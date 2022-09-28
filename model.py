@@ -138,7 +138,6 @@ if __name__ == '__main__':
     epochs = args.epochs
     t0 = time.time()
     for t in range(epochs):
-        print(f"Epoch {t+1}: ", end='')
         train(train_loader, model, loss_fn, optimizer, device)
         res = test(test_loader, model, loss_fn, device)
         res["Epoch"] = t
