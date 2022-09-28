@@ -1,3 +1,4 @@
+from tkinter import W
 import torch
 import torchvision.datasets as datasets 
 import torchvision.transforms as T
@@ -8,7 +9,7 @@ import matplotlib.pyplot as plt
 from skimage.segmentation import slic
 import skimage as ski
 
-from multiprocessing import Pool
+import multiprocessing
 import time
 
 def get_ds_name(n_segments, compactness, features, train):
@@ -37,17 +38,25 @@ class SuperPixelGraphMNIST(InMemoryDataset):
             self.root = root
         super().__init__(self.root, None, None, None)
         self.data, self.slices = torch.load(self.processed_paths[0])
+        self.get_stats()
+        print("Loaded.")
+        print(f"Average number of nodes: {self.avg_num_nodes} with standard deviation {self.std_deviation_num_nodes}")
+        print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
 
     def loadMNIST(self):
         mnist = datasets.MNIST(self.root, train=self.train, download=True, transform=T.ToTensor())
         img_total = mnist.data.shape[0]
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
-        t = time.time()
         self.get_avg_color = 'avg_color' in self.features
         self.get_std_deviation_color = 'std_deviation_color' in self.features
         self.get_centroid = 'centroid' in self.features
-        with Pool() as p:
-            data_list = p.map(self.create_data_obj, mnist)
+
+        chunksize = int(np.ceil(len(mnist) // 4*multiprocessing.cpu_count()))
+        t = time.time()
+        with multiprocessing.Pool() as p:
+            data_list = []
+            for data in p.imap_unordered(self.create_data_obj, mnist, chunksize=chunksize):
+                data_list.append(data)
         t = time.time() - t
         print(f'Done in {t}s')
         return self.collate(data_list)
@@ -81,11 +90,23 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                 s2 = s2/num_pixels
                 std_deviation = np.sqrt(s2 - s1*s1)
                 x.append(torch.from_numpy(std_deviation.flatten()).to(torch.float))
+            pos = torch.from_numpy(pos).to(torch.float)
             if self.get_centroid:
-                pos = torch.from_numpy(pos).to(torch.float)
                 x.append(pos[:,0])
                 x.append(pos[:,1])
             return Data(x=torch.torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
+
+    def save_stats(self, data):
+        nodes = [d.num_nodes for d in data]
+        edges = [d.num_edges for d in data]
+        self.avg_num_nodes = np.average(nodes)
+        self.std_deviation_num_nodes = np.std(nodes)
+        self.avg_num_edges = np.average(edges)
+        self.std_deviation_num_edges = np.std(edges)
+    
+    def get_stats(self):
+        data_list = [self[i] for i in range(len(self))]
+        self.save_stats(data_list)
 
     @property
     def processed_file_names(self):
@@ -117,6 +138,9 @@ if __name__ == '__main__' :
 
     if not args.train and not args.test:
         print("there's nothing to do")
+    
+    if args.features is not None:
+        args.features = args.features.split()
     
     if args.train:
         print('-----------------------------------')
