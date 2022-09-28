@@ -50,6 +50,8 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         self.get_avg_color = 'avg_color' in self.features
         self.get_std_deviation_color = 'std_deviation_color' in self.features
         self.get_centroid = 'centroid' in self.features
+        self.get_std_deviation_centroid = 'std_deviation_centroid' in self.features
+        self.get_num_pixels = 'num_pixels' in self.features
 
         chunksize = int(np.ceil(len(mnist) // 4*multiprocessing.cpu_count()))
         t = time.time()
@@ -70,15 +72,18 @@ class SuperPixelGraphMNIST(InMemoryDataset):
             n = g.number_of_nodes()
             s1 = np.zeros([n, 1])  # for mean color and std deviation
             s2 = np.zeros([n, 1])  # for std deviation
-            pos = np.zeros([n, 2]) # for centroid
+            pos1 = np.zeros([n, 2]) # for centroid
+            pos2 = np.zeros([n, 2]) # for centroid std deviation
             num_pixels = np.zeros([n, 1])
             for idx in range(dim0 * dim1):
                     idx_i, idx_j = idx % dim0, int(idx / dim0)
                     node = s[idx_i][idx_j] - 1
                     s1[node][0]  += img_np[idx_i][idx_j]
                     s2[node][0]  += pow(img_np[idx_i][idx_j], 2)
-                    pos[node][0] = (num_pixels[node] * pos[node][0] + idx_i) / (num_pixels[node] + 1)
-                    pos[node][1] = (num_pixels[node] * pos[node][1] + idx_j) / (num_pixels[node] + 1)
+                    pos1[node][0] += idx_i
+                    pos1[node][1] += idx_j
+                    pos2[node][0] += pow(idx_i, 2)
+                    pos2[node][1] += pow(idx_j, 2)
                     num_pixels[node][0] += 1
             edge_index = torch.from_numpy(np.array(g.edges).T).to(torch.long)
             x = []
@@ -90,10 +95,17 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                 s2 = s2/num_pixels
                 std_deviation = np.sqrt(s2 - s1*s1)
                 x.append(torch.from_numpy(std_deviation.flatten()).to(torch.float))
-            pos = torch.from_numpy(pos).to(torch.float)
+            pos1 = pos1/num_pixels
+            pos = torch.from_numpy(pos1).to(torch.float)
             if self.get_centroid:
-                x.append(pos[:,0])
-                x.append(pos[:,1])
+                x.append(pos1[:,0])
+                x.append(pos1[:,1])
+            if self.get_std_deviation_centroid:
+                pos2 = pos2/num_pixels
+                std_deviation_centroid = np.sqrt(pos2 - pos1*pos1)
+                x.append(std_deviation_centroid[:,0])
+                x.append(std_deviation_centroid[:,1])
+            
             return Data(x=torch.torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
 
     def save_stats(self, data):
@@ -133,7 +145,7 @@ if __name__ == '__main__' :
     parser.add_argument("--compactness", type=float, default=0.1,
                         help="compactness for SLIC algorithm. (default: 0.1)")
     parser.add_argument("--features", type=str, default=None,
-                        help="space separated list of features. options are: avg_color, std_deviation_color, centroid. (default: avg_color centroid)")
+                        help="space separated list of features. options are: avg_color, std_deviation_color, centroid, std_deviation_centroid, num_pixels. (default: avg_color centroid)")
     args = parser.parse_args()
 
     if not args.train and not args.test:
