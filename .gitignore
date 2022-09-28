@@ -1,4 +1,5 @@
 test*
 train*
 *.csv
+data
 __pycache__
