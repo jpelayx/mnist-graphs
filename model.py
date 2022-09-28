@@ -11,7 +11,6 @@ from torch_geometric.nn import GCNConv, global_mean_pool, global_max_pool
 
 import mnist_slic 
 
-
 class GCN(torch.nn.Module):
     def __init__(self, data):
         super(GCN, self).__init__()
@@ -66,7 +65,8 @@ def test(dataloader, model, loss_fn, device):
     accuracy = accuracy_score(Y, Y_pred)
     f1_micro = f1_score(Y, Y_pred, average='micro', labels=[0,1,2,3,4,5,6,7,8,9])
     f1_macro = f1_score(Y, Y_pred, average='macro', labels=[0,1,2,3,4,5,6,7,8,9])
-    return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "Avg loss": test_loss}
+    f1_weighted = f1_score(Y, Y_pred, average='weighted', labels=[0,1,2,3,4,5,6,7,8,9])
+    return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weigthed)": f1_weighted, "Avg loss": test_loss}
 
 
 def load_models(n_segments, compactness, features, train_dir, test_dir):
@@ -87,6 +87,7 @@ def load_models(n_segments, compactness, features, train_dir, test_dir):
 if __name__ == '__main__':
     import argparse
     import csv
+    import time
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--traindir", default=None, 
@@ -107,8 +108,10 @@ if __name__ == '__main__':
                         help="output file")
     args = parser.parse_args()
 
-    field_names = ["Epoch", "Accuracy", "F-measure (micro)", "F-measure (macro)", "Avg loss"]
+    field_names = ["Epoch", "Accuracy", "F-measure (micro)", "F-measure (macro)", "F-measure (weigthed)", "Avg loss"]
     
+    if args.features is not None:
+        args.features = args.features.split()
 
     train_ds, train_loader, test_ds, test_loader = load_models(args.n_segments,
                                                                args.compactness,
@@ -133,6 +136,7 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
 
     epochs = args.epochs
+    t0 = time.time()
     for t in range(epochs):
         print(f"Epoch {t+1}: ", end='')
         train(train_loader, model, loss_fn, optimizer, device)
@@ -142,5 +146,6 @@ if __name__ == '__main__':
         with open(out, 'a', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=field_names)
             writer.writerow(res)
+    tf = time.time()
 
-    print("Done!")
+    print(f"Done in {tf - t0}s.")
