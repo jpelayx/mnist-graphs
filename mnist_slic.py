@@ -109,6 +109,8 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                 std_deviation_centroid = torch.from_numpy(np.sqrt(pos2 - pos1*pos1)).to(torch.float)
                 x.append(std_deviation_centroid[:,0])
                 x.append(std_deviation_centroid[:,1])
+            if self.get_num_pixels:
+                x.append(torch.from_numpy(num_pixels.flatten()).to(torch.float))
             return Data(x=torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
 
     def save_stats(self, data):
