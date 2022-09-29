@@ -47,22 +47,25 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         mnist = datasets.MNIST(self.root, train=self.train, download=True, transform=T.ToTensor())
         img_total = mnist.data.shape[0]
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
+        print(f'Computing features: ')
         self.get_avg_color = 'avg_color' in self.features
+        if self.get_avg_color:
+            print('\t+ avg_color')
         self.get_std_deviation_color = 'std_deviation_color' in self.features
+        if self.get_std_deviation_color:
+            print('\t+ std_deviation_color')
         self.get_centroid = 'centroid' in self.features
+        if self.get_centroid:
+            print('\t+ centroid')
         self.get_std_deviation_centroid = 'std_deviation_centroid' in self.features
+        if self.get_std_deviation_centroid:
+            print('\t+ std_deviation_centroid')
         self.get_num_pixels = 'num_pixels' in self.features
+        if self.get_num_pixels:
+            print('\t+ num_pixels')
 
-        chunksize = int(np.ceil(len(mnist) // 4*multiprocessing.cpu_count()))
-        use_mp = False
         t = time.time()
-        if use_mp:
-            with multiprocessing.Pool() as p:
-                data_list = []
-                for data in p.imap_unordered(self.create_data_obj, mnist, chunksize=chunksize):
-                    data_list.append(data)
-        else:
-            data_list = [self.create_data_obj(d) for d in mnist]
+        data_list = [self.create_data_obj(d) for d in mnist]
         t = time.time() - t
         print(f'Done in {t}s')
         return self.collate(data_list)
