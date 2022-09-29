@@ -100,7 +100,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                     x.append(torch.from_numpy(s1.flatten()).to(torch.float))
             if self.get_std_deviation_color:
                 s2 = s2/num_pixels
-                std_deviation = np.sqrt(s2 - s1*s1)
+                std_deviation = np.sqrt(np.abs((s2 - s1*s1)))
                 x.append(torch.from_numpy(std_deviation.flatten()).to(torch.float))
             pos1 = pos1/num_pixels
             pos = torch.from_numpy(pos1).to(torch.float)
@@ -109,7 +109,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                 x.append(pos[:,1])
             if self.get_std_deviation_centroid:
                 pos2 = pos2/num_pixels
-                std_deviation_centroid = torch.from_numpy(np.sqrt(pos2 - pos1*pos1)).to(torch.float)
+                std_deviation_centroid = torch.from_numpy(np.sqrt(np.abs(pos2 - pos1*pos1))).to(torch.float)
                 x.append(std_deviation_centroid[:,0])
                 x.append(std_deviation_centroid[:,1])
             if self.get_num_pixels:
