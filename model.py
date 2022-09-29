@@ -90,16 +90,7 @@ if __name__ == '__main__':
     import time
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--traindir", default=None, 
-                        help="train dataset location")
-    parser.add_argument("--testdir", default=None, 
-                        help="test dataset location")
-    parser.add_argument("--n_segments", type=int, default=75,
-                        help="aproximate number of graph nodes. (default: 75)")
-    parser.add_argument("--compactness", type=float, default=0.1,
-                        help="compactness for SLIC algorithm. (default: 0.1)")
-    parser.add_argument("--features", type=str, default=None,
-                        help="space separated list of features. options are: avg_color, std_deviation_color, centroid. (default: avg_color centroid)")
+    mnist_slic.add_ds_args(parser)
     parser.add_argument("--epochs", type=int, default=100,
                         help="number of training epochs")
     parser.add_argument("--learning_rate", type=float, default=0.001,

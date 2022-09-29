@@ -54,11 +54,15 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         self.get_num_pixels = 'num_pixels' in self.features
 
         chunksize = int(np.ceil(len(mnist) // 4*multiprocessing.cpu_count()))
+        use_mp = False
         t = time.time()
-        with multiprocessing.Pool() as p:
-            data_list = []
-            for data in p.imap_unordered(self.create_data_obj, mnist, chunksize=chunksize):
-                data_list.append(data)
+        if use_mp:
+            with multiprocessing.Pool() as p:
+                data_list = []
+                for data in p.imap_unordered(self.create_data_obj, mnist, chunksize=chunksize):
+                    data_list.append(data)
+        else:
+            data_list = [self.create_data_obj(d) for d in mnist]
         t = time.time() - t
         print(f'Done in {t}s')
         return self.collate(data_list)
@@ -98,15 +102,14 @@ class SuperPixelGraphMNIST(InMemoryDataset):
             pos1 = pos1/num_pixels
             pos = torch.from_numpy(pos1).to(torch.float)
             if self.get_centroid:
-                x.append(pos1[:,0])
-                x.append(pos1[:,1])
+                x.append(pos[:,0])
+                x.append(pos[:,1])
             if self.get_std_deviation_centroid:
                 pos2 = pos2/num_pixels
-                std_deviation_centroid = np.sqrt(pos2 - pos1*pos1)
+                std_deviation_centroid = torch.from_numpy(np.sqrt(pos2 - pos1*pos1)).to(torch.float)
                 x.append(std_deviation_centroid[:,0])
                 x.append(std_deviation_centroid[:,1])
-            
-            return Data(x=torch.torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
+            return Data(x=torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
 
     def save_stats(self, data):
         nodes = [d.num_nodes for d in data]
@@ -128,14 +131,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         data, slices = self.loadMNIST()
         torch.save((data, slices), self.processed_paths[0])
 
-if __name__ == '__main__' :
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--train", action="store_true",
-                        help="load train dataset")
-    parser.add_argument("--test", action="store_true",
-                        help="load test dataset")
+def add_ds_args(parser):
     parser.add_argument("--traindir", default=None, 
                         help="train dataset location")
     parser.add_argument("--testdir", default=None, 
@@ -146,6 +142,16 @@ if __name__ == '__main__' :
                         help="compactness for SLIC algorithm. (default: 0.1)")
     parser.add_argument("--features", type=str, default=None,
                         help="space separated list of features. options are: avg_color, std_deviation_color, centroid, std_deviation_centroid, num_pixels. (default: avg_color centroid)")
+
+if __name__ == '__main__' :
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    add_ds_args(parser)
+    parser.add_argument("--train", action="store_true",
+                        help="load train dataset")
+    parser.add_argument("--test", action="store_true",
+                        help="load test dataset")
     args = parser.parse_args()
 
     if not args.train and not args.test:
