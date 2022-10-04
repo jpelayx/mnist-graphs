@@ -64,7 +64,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
             print('\t+ avg_color_distance')
         self.get_std_dev_color_distance = 'std_deviation_color_distance' in self.features
         if self.get_std_dev_color_distance:
-            print('\t+ std_dev_color_distance')
+            print('\t+ std_deviation_color_distance')
 
     def loadMNIST(self):
         mnist = datasets.MNIST(self.root, train=self.train, download=True, transform=T.ToTensor())
@@ -123,10 +123,12 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                 x.append(std_dev_centroid[:,1])
             if self.get_num_pixels:
                 x.append(torch.from_numpy(num_pixels.flatten()).to(torch.float))
-            if self.get_avg_color_distance:
-                x.append(torch.Tensor([np.average([g.edges[u,v]['weight'] for u,v in g.edges(node_idx)]) for node_idx in range(n)]))
-            if self.get_std_dev_color_distance:
-                x.append(torch.Tensor([np.std([g.edges[u,v]['weight'] for u,v in g.edges(node_idx)]) for node_idx in range(n)]))
+            if self.get_avg_color_distance or self.get_std_dev_color_distance:
+                distances = [[g.edges[u,v]['weight'] for u, v in g.edges(node_idx)] for node_idx in range(n)]
+                if self.get_avg_color_distance:
+                    x.append(torch.Tensor([np.average(distance) for distance in distances]))
+                if self.get_std_dev_color_distance:
+                    x.append(torch.Tensor([np.std(distance) for distance in distances]))
             return Data(x=torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
 
     def save_stats(self, data):
