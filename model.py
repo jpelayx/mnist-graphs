@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool, global_max_pool
 
 import mnist_slic 
+import cifar10_slic
 
 class GCN(torch.nn.Module):
     def __init__(self, data):
@@ -69,18 +70,31 @@ def test(dataloader, model, loss_fn, device):
     return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weigthed)": f1_weighted, "Avg loss": test_loss}
 
 
-def load_models(n_segments, compactness, features, train_dir, test_dir):
-    test_ds = mnist_slic.SuperPixelGraphMNIST(root=test_dir, 
-                                              n_segments=n_segments,
-                                              compactness=compactness,
-                                              features=features,
-                                              train=False)
+def load_models(n_segments, compactness, features, train_dir, test_dir, dataset):
+    if dataset == 'mnist':
+        test_ds  = mnist_slic.SuperPixelGraphMNIST(root=test_dir, 
+                                                   n_segments=n_segments,
+                                                   compactness=compactness,
+                                                   features=features,
+                                                   train=False)
+        train_ds = mnist_slic.SuperPixelGraphMNIST(root=train_dir, 
+                                                   n_segments=n_segments,
+                                                   compactness=compactness,
+                                                   features=features,
+                                                   train=True)
+    if dataset == 'cifar10':
+        test_ds  = cifar10_slic.SuperPixelGraphCIFAR10(root=test_dir, 
+                                                       n_segments=n_segments,
+                                                       compactness=compactness,
+                                                       features=features,
+                                                       train=False)
+        train_ds = cifar10_slic.SuperPixelGraphCIFAR10(root=train_dir, 
+                                                       n_segments=n_segments,
+                                                       compactness=compactness,
+                                                       features=features,
+                                                       train=True)
+    
     test_loader = DataLoader(test_ds, batch_size=64, shuffle=True)
-    train_ds = mnist_slic.SuperPixelGraphMNIST(root=train_dir, 
-                                               n_segments=n_segments,
-                                               compactness=compactness,
-                                               features=features,
-                                               train=True)
     train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
     return train_ds, train_loader, test_ds, test_loader
 
@@ -90,13 +104,15 @@ if __name__ == '__main__':
     import time
 
     parser = argparse.ArgumentParser()
-    mnist_slic.add_ds_args(parser)
+    cifar10_slic.add_ds_args(parser)
     parser.add_argument("--epochs", type=int, default=100,
                         help="number of training epochs")
     parser.add_argument("--learning_rate", type=float, default=0.001,
                         help="model's learning rate")
     parser.add_argument("--out", default=None,
                         help="output file")
+    parser.add_argument("--dataset", default='mnist',
+                        help="dataset to train against")
     args = parser.parse_args()
 
     field_names = ["Epoch", "Accuracy", "F-measure (micro)", "F-measure (macro)", "F-measure (weigthed)", "Avg loss"]
@@ -108,7 +124,8 @@ if __name__ == '__main__':
                                                                args.compactness,
                                                                args.features,
                                                                args.traindir,
-                                                               args.testdir)
+                                                               args.testdir,
+                                                               args.dataset)
     if args.out is None:
         out = 'mnist-slic-n{}-c{}-{}.csv'.format(train_ds.n_segments,
                                                 train_ds.compactness,

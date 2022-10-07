@@ -1,3 +1,4 @@
+
 import torch
 import torchvision.datasets as datasets 
 import torchvision.transforms as T
@@ -11,13 +12,15 @@ import skimage as ski
 import multiprocessing
 import time
 
+
 def get_ds_name(n_segments, compactness, features, train):
+    features.sort()
     return  './{}-n{}-c{}-{}'.format('train' if train else 'test', 
                                      n_segments, 
                                      compactness,
                                      '-'.join(features))
 
-class SuperPixelGraphMNIST(InMemoryDataset):
+class SuperPixelGraphCIFAR10(InMemoryDataset):
     def __init__(self, 
                  root=None, 
                  n_segments= 75,  
@@ -38,7 +41,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         super().__init__(self.root, None, None, None)
         self.data, self.slices = torch.load(self.processed_paths[0])
         self.get_stats()
-        print("Loaded.")
+        print("CIFAR10 Loaded.")
         print(f"Average number of nodes: {self.avg_num_nodes} with standard deviation {self.std_deviation_num_nodes}")
         print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
 
@@ -58,22 +61,16 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         self.get_num_pixels = 'num_pixels' in self.features
         if self.get_num_pixels:
             print('\t+ num_pixels')
-        self.get_avg_color_distance = 'avg_color_distance' in self.features
-        if self.get_avg_color_distance:
-            print('\t+ avg_color_distance')
-        self.get_std_dev_color_distance = 'std_deviation_color_distance' in self.features
-        if self.get_std_dev_color_distance:
-            print('\t+ std_deviation_color_distance')
 
-    def loadMNIST(self):
-        mnist = datasets.MNIST(self.root, train=self.train, download=True, transform=T.ToTensor())
-        img_total = mnist.data.shape[0]
+    def loadCIFAR10(self):
+        cifar10 = datasets.CIFAR10(self.root, train=self.train, download=True, transform=T.ToTensor())
+        img_total = cifar10.data.shape[0]
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
         print(f'Computing features: ')
         self.select_features()
 
         t = time.time()
-        data_list = [self.create_data_obj(d) for d in mnist]
+        data_list = [self.create_data_obj(d) for d in cifar10]
         t = time.time() - t
         print(f'Done in {t}s')
         return self.collate(data_list)
@@ -81,20 +78,24 @@ class SuperPixelGraphMNIST(InMemoryDataset):
     def create_data_obj(self, d):
             img, y = d
             _, dim0, dim1 = img.shape
-            img_np = img.view(dim0, dim1).numpy()
+            img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
             s = slic(img_np, self.n_segments, self.compactness, start_label=0)
             g = ski.future.graph.rag_mean_color(img_np, s)
             n = g.number_of_nodes()
-            s1 = np.zeros([n, 1])  # for mean color and std deviation
-            s2 = np.zeros([n, 1])  # for std deviation
+            s1 = np.zeros([n, 3])  # for mean color and std deviation
+            s2 = np.zeros([n, 3])  # for std deviation
             pos1 = np.zeros([n, 2]) # for centroid
             pos2 = np.zeros([n, 2]) # for centroid std deviation
             num_pixels = np.zeros([n, 1])
             for idx in range(dim0 * dim1):
                     idx_i, idx_j = idx % dim0, int(idx / dim0)
                     node = s[idx_i][idx_j] - 1
-                    s1[node][0]  += img_np[idx_i][idx_j]
-                    s2[node][0]  += pow(img_np[idx_i][idx_j], 2)
+                    s1[node][0]  += img_np[idx_i][idx_j][0]
+                    s2[node][0]  += pow(img_np[idx_i][idx_j][0], 2)
+                    s1[node][1]  += img_np[idx_i][idx_j][1]
+                    s2[node][1]  += pow(img_np[idx_i][idx_j][1], 2)
+                    s1[node][2]  += img_np[idx_i][idx_j][2]
+                    s2[node][2]  += pow(img_np[idx_i][idx_j][2], 2)
                     pos1[node][0] += idx_i
                     pos1[node][1] += idx_j
                     pos2[node][0] += pow(idx_i, 2)
@@ -105,11 +106,16 @@ class SuperPixelGraphMNIST(InMemoryDataset):
             if self.get_std_dev_color or self.get_avg_color:
                 s1 = s1/num_pixels
                 if self.get_avg_color:
-                    x.append(torch.from_numpy(s1.flatten()).to(torch.float))
+                    avg_color = torch.from_numpy(s1).to(torch.float)
+                    x.append(avg_color[:,0])
+                    x.append(avg_color[:,1])
+                    x.append(avg_color[:,2])
             if self.get_std_dev_color:
                 s2 = s2/num_pixels
-                std_dev = np.sqrt(np.abs((s2 - s1*s1)))
-                x.append(torch.from_numpy(std_dev.flatten()).to(torch.float))
+                std_dev = torch.from_numpy(np.sqrt(np.abs((s2 - s1*s1)))).to(torch.float)
+                x.append(std_dev[:,0])
+                x.append(std_dev[:,1])
+                x.append(std_dev[:,2])
             pos1 = pos1/num_pixels
             pos = torch.from_numpy(pos1).to(torch.float)
             if self.get_centroid:
@@ -122,12 +128,6 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                 x.append(std_dev_centroid[:,1])
             if self.get_num_pixels:
                 x.append(torch.from_numpy(num_pixels.flatten()).to(torch.float))
-            if self.get_avg_color_distance or self.get_std_dev_color_distance:
-                distances = [[g.edges[u,v]['weight'] for u, v in g.edges(node_idx)] for node_idx in range(n)]
-                if self.get_avg_color_distance:
-                    x.append(torch.Tensor([np.average(distance) for distance in distances]))
-                if self.get_std_dev_color_distance:
-                    x.append(torch.Tensor([np.std(distance) for distance in distances]))
             return Data(x=torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
 
     def save_stats(self, data):
@@ -147,7 +147,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         return ['data.pt']
     
     def process(self):
-        data, slices = self.loadMNIST()
+        data, slices = self.loadCIFAR10()
         torch.save((data, slices), self.processed_paths[0])
 
 def add_ds_args(parser):
@@ -182,7 +182,7 @@ if __name__ == '__main__' :
     if args.train:
         print('-----------------------------------')
         print('Loading train dataset')
-        train_ds = SuperPixelGraphMNIST(root=args.traindir, 
+        train_ds = SuperPixelGraphCIFAR10(root=args.traindir, 
                                         n_segments=args.n_segments,
                                         compactness=args.compactness,
                                         features=args.features,
@@ -192,7 +192,7 @@ if __name__ == '__main__' :
     if args.test:
         print('-----------------------------------')
         print('Loading test dataset')
-        test_ds = SuperPixelGraphMNIST(root=args.traindir, 
+        test_ds = SuperPixelGraphCIFAR10(root=args.traindir, 
                                        n_segments=args.n_segments,
                                        compactness=args.compactness,
                                        features=args.features,
