@@ -2,4 +2,8 @@ test*
 train*
 *.csv
 data
+.data
+mnist-*
+cifar10-*
+
 __pycache__

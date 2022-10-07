@@ -15,7 +15,7 @@ import time
 
 def get_ds_name(n_segments, compactness, features, train):
     features.sort()
-    return  './{}-n{}-c{}-{}'.format('train' if train else 'test', 
+    return  './cifar10-{}-n{}-c{}-{}'.format('train' if train else 'test', 
                                      n_segments, 
                                      compactness,
                                      '-'.join(features))

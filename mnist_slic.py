@@ -12,7 +12,7 @@ import multiprocessing
 import time
 
 def get_ds_name(n_segments, compactness, features, train):
-    return  './{}-n{}-c{}-{}'.format('train' if train else 'test', 
+    return  './mnist-{}-n{}-c{}-{}'.format('train' if train else 'test', 
                                      n_segments, 
                                      compactness,
                                      '-'.join(features))
