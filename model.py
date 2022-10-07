@@ -127,9 +127,10 @@ if __name__ == '__main__':
                                                                args.testdir,
                                                                args.dataset)
     if args.out is None:
-        out = 'mnist-slic-n{}-c{}-{}.csv'.format(train_ds.n_segments,
-                                                train_ds.compactness,
-                                                '-'.join(train_ds.features))
+        out = '{}-n{}-c{}-{}.csv'.format(args.dataset,
+                                         train_ds.n_segments,
+                                         train_ds.compactness,
+                                         '-'.join(train_ds.features))
     else:
         out = args.out
 
