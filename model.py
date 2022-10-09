@@ -113,6 +113,7 @@ if __name__ == '__main__':
                         help="output file")
     parser.add_argument("--dataset", default='mnist',
                         help="dataset to train against")
+    parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
     field_names = ["Epoch", "Accuracy", "F-measure (micro)", "F-measure (macro)", "F-measure (weigthed)", "Avg loss"]
@@ -131,12 +132,30 @@ if __name__ == '__main__':
                                          train_ds.n_segments,
                                          train_ds.compactness,
                                          '-'.join(train_ds.features))
+        out_meta = '{}-n{}-c{}-{}.info'.format(args.dataset,
+                                         train_ds.n_segments,
+                                         train_ds.compactness,
+                                         '-'.join(train_ds.features))
     else:
         out = args.out
 
     with open(out, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
         writer.writeheader()
+    with open(out_meta, 'w') as infofile:
+        infofile.write(f'DATASET INFO\n')
+        infofile.write(f'TRAIN\n')
+        infofile.write(f'   Loading time: {train_ds.loading_time} s\n')
+        infofile.write(f'   Avg. number of nodes: {train_ds.avg_num_nodes}\n')
+        infofile.write(f'         std. deviation: {train_ds.std_deviation_num_nodes}\n')
+        infofile.write(f'   Avg. number of edges: {train_ds.avg_num_edges}\n')
+        infofile.write(f'         std. deviation: {train_ds.std_deviation_num_edges}\n')
+        infofile.write(f'TEST\n')
+        infofile.write(f'   Loading time: {test_ds.loading_time} s\n')
+        infofile.write(f'   Avg. number of nodes: {test_ds.avg_num_nodes}\n')
+        infofile.write(f'         std. deviation: {test_ds.std_deviation_num_nodes}\n')
+        infofile.write(f'   Avg. number of edges: {test_ds.avg_num_edges}\n')
+        infofile.write(f'         std. deviation: {test_ds.std_deviation_num_edges}\n')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
@@ -145,15 +164,21 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
 
     epochs = args.epochs
+    quiet = args.quiet
     t0 = time.time()
     for t in range(epochs):
         train(train_loader, model, loss_fn, optimizer, device)
         res = test(test_loader, model, loss_fn, device)
         res["Epoch"] = t
-        print(f'Epoch: {res["Epoch"]}, accuracy: {res["Accuracy"]}, loss: {res["Avg loss"]}')
+        if not quiet:
+            print(f'Epoch: {res["Epoch"]}, accuracy: {res["Accuracy"]}, loss: {res["Avg loss"]}')
         with open(out, 'a', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=field_names)
             writer.writerow(res)
     tf = time.time()
 
+    with open(out_meta, 'a') as infofile:
+        infofile.write(f'MODEL INFO\n')
+        infofile.write(f'   Training time: {tf-t0} s\n')
+    
     print(f"Done in {tf - t0}s.")

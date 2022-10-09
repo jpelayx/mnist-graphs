@@ -24,21 +24,19 @@ class SuperPixelGraphMNIST(InMemoryDataset):
                  compactness = 0.1, 
                  features = None, # possible features are avg_color, centroid, std_deviation_color 
                  train = True):
+
         self.train = train
         self.n_segments = n_segments
         self.compactness = compactness
-        if features is None:
-            self.features = ['avg_color', 'centroid']
-        else:
-            self.features = features
-        if root is None:
-            self.root = get_ds_name(self.n_segments, self.compactness, self.features, self.train)
-        else:
-            self.root = root
+        self.features = ['avg_color', 'centroid'] if features is None else features
+        self.root = get_ds_name(self.n_segments, self.compactness, self.features, self.train) if root is None else root
+
+        self.is_pre_loaded = True
         super().__init__(self.root, None, None, None)
         self.data, self.slices = torch.load(self.processed_paths[0])
+
         self.get_stats()
-        print("Loaded.")
+        print("MNIST Loaded.")
         print(f"Average number of nodes: {self.avg_num_nodes} with standard deviation {self.std_deviation_num_nodes}")
         print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
 
@@ -66,6 +64,7 @@ class SuperPixelGraphMNIST(InMemoryDataset):
             print('\t+ std_deviation_color_distance')
 
     def loadMNIST(self):
+        self.is_pre_loaded = False
         mnist = datasets.MNIST(self.root, train=self.train, download=True, transform=T.ToTensor())
         img_total = mnist.data.shape[0]
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
@@ -75,7 +74,9 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         t = time.time()
         data_list = [self.create_data_obj(d) for d in mnist]
         t = time.time() - t
+        self.loading_time = t
         print(f'Done in {t}s')
+        self.save_stats(data_list)
         return self.collate(data_list)
 
     def create_data_obj(self, d):
@@ -139,8 +140,10 @@ class SuperPixelGraphMNIST(InMemoryDataset):
         self.std_deviation_num_edges = np.std(edges)
     
     def get_stats(self):
-        data_list = [self[i] for i in range(len(self))]
-        self.save_stats(data_list)
+        if self.is_pre_loaded:
+            data_list = [self[i] for i in range(len(self))]
+            self.save_stats(data_list)
+            self.loading_time = 0
 
     @property
     def processed_file_names(self):
