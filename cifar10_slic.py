@@ -80,8 +80,14 @@ class SuperPixelGraphCIFAR10(InMemoryDataset):
             _, dim0, dim1 = img.shape
             img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
             s = slic(img_np, self.n_segments, self.compactness, start_label=0)
-            g = ski.future.graph.rag_mean_color(img_np, s)
-            n = g.number_of_nodes()
+            # rag_mean_color() fails when image is segmented into 1 superpixel 
+            try:
+                g = ski.future.graph.rag_mean_color(img_np, s)
+                n = g.number_of_nodes()
+                edge_index = torch.from_numpy(np.array(g.edges).T).to(torch.long)
+            except: 
+                n = 1
+                edge_index = torch.tensor([]).to(torch.long)
             s1 = np.zeros([n, 3])  # for mean color and std deviation
             s2 = np.zeros([n, 3])  # for std deviation
             pos1 = np.zeros([n, 2]) # for centroid
@@ -101,7 +107,6 @@ class SuperPixelGraphCIFAR10(InMemoryDataset):
                     pos2[node][0] += pow(idx_i, 2)
                     pos2[node][1] += pow(idx_j, 2)
                     num_pixels[node][0] += 1
-            edge_index = torch.from_numpy(np.array(g.edges).T).to(torch.long)
             x = []
             if self.get_std_dev_color or self.get_avg_color:
                 s1 = s1/num_pixels
