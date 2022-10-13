@@ -182,9 +182,8 @@ if __name__ == '__main__':
         loss_fn = torch.nn.CrossEntropyLoss()
 
         fold_hist = []
-        if not quiet:
-            print('------------------------')
-            print(f'FOLD {len(history) + 1}/{5}')
+        print('------------------------')
+        print(f'FOLD {len(history) + 1}/{5}')
         t0 = time.time()
         for t in range(epochs):
             train(train_loader, model, loss_fn, optimizer, device)
@@ -194,8 +193,7 @@ if __name__ == '__main__':
                 print(f'Epoch: {res["Epoch"]}, accuracy: {res["Accuracy"]}, loss: {res["Avg loss"]}')
             fold_hist.append(res)
         tf = time.time()
-        if not quiet:
-            print(f"Done in {tf - t0}s.")
+        print(f"Done in {tf - t0}s.")
         training_time.append(tf - t0)
         history.append(fold_hist)
 
