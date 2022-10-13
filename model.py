@@ -1,10 +1,13 @@
+from matplotlib.pyplot import hist
 import torch
+from torch.utils.data import ConcatDataset, SubsetRandomSampler
 import torchvision 
 import torchvision.datasets as datasets
 import torchvision.transforms as T
 import numpy as np
 from torch_geometric.loader import DataLoader
 from sklearn.metrics import f1_score, accuracy_score
+from sklearn.model_selection import StratifiedKFold
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool, global_max_pool
@@ -70,7 +73,7 @@ def test(dataloader, model, loss_fn, device):
     return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weigthed)": f1_weighted, "Avg loss": test_loss}
 
 
-def load_models(n_segments, compactness, features, train_dir, test_dir, dataset):
+def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset):
     if dataset == 'mnist':
         test_ds  = mnist_slic.SuperPixelGraphMNIST(root=test_dir, 
                                                    n_segments=n_segments,
@@ -93,10 +96,11 @@ def load_models(n_segments, compactness, features, train_dir, test_dir, dataset)
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True)
-    
-    test_loader = DataLoader(test_ds, batch_size=64, shuffle=True)
-    train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
-    return train_ds, train_loader, test_ds, test_loader
+    ds = ConcatDataset([train_ds, test_ds])
+    targets = torch.cat([train_ds.get_targets(), test_ds.get_targets()])
+    splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
+
+    return ds, splits 
 
 if __name__ == '__main__':
     import argparse
@@ -121,27 +125,29 @@ if __name__ == '__main__':
     if args.features is not None:
         args.features = args.features.split()
 
-    train_ds, train_loader, test_ds, test_loader = load_models(args.n_segments,
-                                                               args.compactness,
-                                                               args.features,
-                                                               args.traindir,
-                                                               args.testdir,
-                                                               args.dataset)
+    ds, splits = load_dataset(args.n_segments,
+                              args.compactness,
+                              args.features,
+                              args.traindir,
+                              args.testdir,
+                              args.dataset)
     if args.out is None:
         out = '{}-n{}-c{}-{}.csv'.format(args.dataset,
-                                         train_ds.n_segments,
-                                         train_ds.compactness,
-                                         '-'.join(train_ds.features))
+                                         ds.datasets[0].n_segments,
+                                         ds.datasets[0].compactness,
+                                         '-'.join(ds.datasets[0].features))
         out_meta = '{}-n{}-c{}-{}.info'.format(args.dataset,
-                                         train_ds.n_segments,
-                                         train_ds.compactness,
-                                         '-'.join(train_ds.features))
+                                         ds.datasets[0].n_segments,
+                                         ds.datasets[0].compactness,
+                                         '-'.join(ds.datasets[0].features))
     else:
-        out = args.out
+        out = args.out + '.csv'
+        out_meta = args.out + '.info'
 
     with open(out, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
         writer.writeheader()
+    train_ds, test_ds = ds.datasets[0], ds.datasets[1]
     with open(out_meta, 'w') as infofile:
         infofile.write(f'DATASET INFO\n')
         infofile.write(f'TRAIN\n')
@@ -159,26 +165,50 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
-    model = GCN(train_ds).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    loss_fn = torch.nn.CrossEntropyLoss()
+
+    torch.manual_seed(42)
 
     epochs = args.epochs
     quiet = args.quiet
-    t0 = time.time()
-    for t in range(epochs):
-        train(train_loader, model, loss_fn, optimizer, device)
-        res = test(test_loader, model, loss_fn, device)
-        res["Epoch"] = t
+
+    history = []
+    training_time = []
+    for train_index, test_index in splits:
+        train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
+        test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
+
+        model = GCN(train_ds).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+        loss_fn = torch.nn.CrossEntropyLoss()
+
+        fold_hist = []
         if not quiet:
-            print(f'Epoch: {res["Epoch"]}, accuracy: {res["Accuracy"]}, loss: {res["Avg loss"]}')
-        with open(out, 'a', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=field_names)
-            writer.writerow(res)
-    tf = time.time()
+            print('------------------------')
+            print(f'FOLD {len(history) + 1}/{5}')
+        t0 = time.time()
+        for t in range(epochs):
+            train(train_loader, model, loss_fn, optimizer, device)
+            res = test(test_loader, model, loss_fn, device)
+            res["Epoch"] = t
+            if not quiet:
+                print(f'Epoch: {res["Epoch"]}, accuracy: {res["Accuracy"]}, loss: {res["Avg loss"]}')
+            fold_hist.append(res)
+        tf = time.time()
+        if not quiet:
+            print(f"Done in {tf - t0}s.")
+        training_time.append(tf - t0)
+        history.append(fold_hist)
+
 
     with open(out_meta, 'a') as infofile:
         infofile.write(f'MODEL INFO\n')
-        infofile.write(f'   Training time: {tf-t0} s\n')
+        infofile.write(f'   Training time: {np.average(training_time)} s\n')
     
-    print(f"Done in {tf - t0}s.")
+    with open(out, 'a', newline='') as csvfile:
+        history = np.array(history)
+        avg_res = {}
+        for e in range(epochs):
+            for field in field_names:
+                avg_res[field] = np.average([f[field] for f in history[:,e]])
+            writer = csv.DictWriter(csvfile, fieldnames=field_names)
+            writer.writerow(avg_res)

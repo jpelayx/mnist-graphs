@@ -42,6 +42,9 @@ class SuperPixelGraphCIFAR10(InMemoryDataset):
         print(f"Average number of nodes: {self.avg_num_nodes} with standard deviation {self.std_deviation_num_nodes}")
         print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
 
+    def get_targets(self):
+        return torch.cat([d.y for d in self])
+
     def select_features(self):
         self.get_avg_color = 'avg_color' in self.features
         if self.get_avg_color:
