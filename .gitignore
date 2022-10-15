@@ -3,5 +3,5 @@ data
 .data
 mnist-*
 cifar10-*
-
+cifar100/
 __pycache__
