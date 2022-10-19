@@ -44,6 +44,9 @@ class RGBSLIC(InMemoryDataset):
     def get_ds_name(self):
         raise NotImplementedError
     
+    def get_labels(self):
+        raise NotImplementedError
+    
     def load_data(self):
         raise NotImplementedError
 

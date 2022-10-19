@@ -13,6 +13,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, global_mean_pool, global_max_pool
 
 import mnist_slic 
+import fashion_mnist_slic
 import cifar10_slic
 import cifar100_slic
 
@@ -86,7 +87,17 @@ def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset
                                                    compactness=compactness,
                                                    features=features,
                                                    train=True)
-        labels = list(range(10))
+    if dataset == 'fashion_mnist':
+        test_ds  = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=test_dir, 
+                                                   n_segments=n_segments,
+                                                   compactness=compactness,
+                                                   features=features,
+                                                   train=False)
+        train_ds = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=train_dir, 
+                                                   n_segments=n_segments,
+                                                   compactness=compactness,
+                                                   features=features,
+                                                   train=True)
     if dataset == 'cifar10':
         test_ds  = cifar10_slic.SuperPixelGraphCIFAR10(root=test_dir, 
                                                        n_segments=n_segments,
@@ -98,7 +109,6 @@ def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True)
-        labels = list(range(10))
     if dataset == 'cifar100':
         test_ds  = cifar100_slic.SuperPixelGraphCIFAR100(root=test_dir, 
                                                        n_segments=n_segments,
@@ -110,7 +120,7 @@ def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True)
-        labels = list(range(100))
+    labels = test_ds.get_labels()
     ds = ConcatDataset([train_ds, test_ds])
     targets = torch.cat([train_ds.get_targets(), test_ds.get_targets()])
     splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
@@ -123,6 +133,10 @@ if __name__ == '__main__':
     import time
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--traindir", default=None, 
+                        help="train dataset location")
+    parser.add_argument("--testdir", default=None, 
+                        help="test dataset location")
     parser.add_argument("--n_segments", type=int, default=75,
                         help="aproximate number of graph nodes. (default: 75)")
     parser.add_argument("--compactness", type=float, default=0.1,
@@ -179,7 +193,7 @@ if __name__ == '__main__':
         meta_out = './{}/training_info.csv'.format(args.dataset)
     else:
         meta_out = args.metaout + '.csv'
-        
+
     meta_info = {}
 
     with open(out, 'w', newline='') as csvfile:

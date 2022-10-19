@@ -11,6 +11,8 @@ class SuperPixelGraphMNIST(GrayscaleSLIC):
                                                  self.n_segments, 
                                                  self.compactness,
                                                  '-'.join(self.features))
+    def get_labels(self):
+        return list(range(10))
     def load_data(self):
         mnist_root = './mnist/{}'.format('train' if self.train else 'test')
         return datasets.MNIST(mnist_root, train=self.train, download=True, transform=T.ToTensor())

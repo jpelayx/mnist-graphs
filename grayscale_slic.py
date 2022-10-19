@@ -52,6 +52,9 @@ class GrayscaleSLIC(InMemoryDataset):
     def get_ds_name(self):
         raise NotImplementedError
     
+    def get_labels(self):
+        raise NotImplementedError
+    
     def get_targets(self):
         return torch.cat([d.y for d in self])
     
