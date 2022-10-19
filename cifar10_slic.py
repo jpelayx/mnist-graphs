@@ -1,9 +1,9 @@
-from rgb_slic import RGBSLIC
+from color_slic import ColorSLIC
 
 import torchvision.datasets as datasets 
 import torchvision.transforms as T
 
-class SuperPixelGraphCIFAR10(RGBSLIC):
+class SuperPixelGraphCIFAR10(ColorSLIC):
     ds_name = 'CIFAR10'
     num_classes = 10
     def get_ds_name(self):

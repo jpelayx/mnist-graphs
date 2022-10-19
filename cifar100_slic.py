@@ -1,9 +1,9 @@
-from rgb_slic import RGBSLIC
+from color_slic import ColorSLIC
 
 import torchvision.datasets as datasets 
 import torchvision.transforms as T
 
-class SuperPixelGraphCIFAR100(RGBSLIC):
+class SuperPixelGraphCIFAR100(ColorSLIC):
     ds_name = 'CIFAR100'
     def get_ds_name(self):
         self.features.sort()

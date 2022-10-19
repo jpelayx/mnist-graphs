@@ -9,13 +9,14 @@ from skimage.segmentation import slic
 import skimage as ski
 import time
 
-class RGBSLIC(InMemoryDataset):
+class ColorSLIC(InMemoryDataset):
     std_features = ['avg_color',
                     'std_deviation_color',
                     'centroid',
                     'std_deviation_centroid']
     implemented_features = ['avg_color',
                             'std_deviation_color',
+                            'std_deviation_color_single',
                             'centroid',
                             'std_deviation_centroid',
                             'num_pixels']
@@ -60,6 +61,9 @@ class RGBSLIC(InMemoryDataset):
         self.get_std_dev_color = 'std_deviation_color' in self.features
         if self.get_std_dev_color:
             print('\t+ std_deviation_color')
+        self.get_std_dev_color_single = 'std_deviation_color_single' in self.features
+        if self.get_std_dev_color_single:
+            print('\t+ std_deviation_color_single')
         self.get_centroid = 'centroid' in self.features
         if self.get_centroid:
             print('\t+ centroid')
@@ -132,6 +136,12 @@ class RGBSLIC(InMemoryDataset):
                 x.append(std_dev[:,0])
                 x.append(std_dev[:,1])
                 x.append(std_dev[:,2])
+            if self.get_std_dev_color_single:
+                s2 = s2/num_pixels
+                std_dev = np.abs((s2 - s1*s1))
+                std_dev = np.sqrt(std_dev[:,0] + std_dev[:,1] + std_dev[:,2])
+                std_dev = torch.from_numpy(std_dev).to(torch.float)
+                x.append(std_dev)
             pos1 = pos1/num_pixels
             pos = torch.from_numpy(pos1).to(torch.float)
             if self.get_centroid:
