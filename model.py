@@ -16,6 +16,7 @@ import mnist_slic
 import fashion_mnist_slic
 import cifar10_slic
 import cifar100_slic
+import stl10_slic
 
 class GCN(torch.nn.Module):
     def __init__(self, data):
@@ -116,6 +117,17 @@ def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset
                                                        features=features,
                                                        train=False)
         train_ds = cifar100_slic.SuperPixelGraphCIFAR100(root=train_dir, 
+                                                       n_segments=n_segments,
+                                                       compactness=compactness,
+                                                       features=features,
+                                                       train=True)
+    if dataset == 'stl10':
+        test_ds  = stl10_slic.SuperPixelGraphSTL10(root=test_dir, 
+                                                       n_segments=n_segments,
+                                                       compactness=compactness,
+                                                       features=features,
+                                                       train=False)
+        train_ds = stl10_slic.SuperPixelGraphSTL10(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
