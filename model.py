@@ -123,7 +123,12 @@ if __name__ == '__main__':
     import time
 
     parser = argparse.ArgumentParser()
-    cifar10_slic.add_ds_args(parser)
+    parser.add_argument("--n_segments", type=int, default=75,
+                        help="aproximate number of graph nodes. (default: 75)")
+    parser.add_argument("--compactness", type=float, default=0.1,
+                        help="compactness for SLIC algorithm. (default: 0.1)")
+    parser.add_argument("--features", type=str, default=None,
+                        help="space separated list of features. options are: avg_color, std_deviation_color, centroid, std_deviation_centroid, num_pixels. (default: avg_color centroid)")
     parser.add_argument("--epochs", type=int, default=100,
                         help="number of training epochs")
     parser.add_argument("--learning_rate", type=float, default=0.001,
@@ -163,7 +168,7 @@ if __name__ == '__main__':
                                       args.testdir,
                                       args.dataset)
     if args.out is None:
-        out = '{}-n{}-c{}-{}.csv'.format(args.dataset,
+        out = './{}/n{}-c{}-{}.csv'.format(args.dataset,
                                          ds.datasets[0].n_segments,
                                          ds.datasets[0].compactness,
                                          '-'.join(ds.datasets[0].features))
@@ -171,12 +176,10 @@ if __name__ == '__main__':
         out = args.out + '.csv'
     
     if args.metaout is None:
-        meta_out = '{}-n{}-c{}-{}.meta.csv'.format(args.dataset,
-                                         ds.datasets[0].n_segments,
-                                         ds.datasets[0].compactness,
-                                         '-'.join(ds.datasets[0].features))
+        meta_out = './{}/training_info.csv'.format(args.dataset)
     else:
         meta_out = args.metaout + '.csv'
+        
     meta_info = {}
 
     with open(out, 'w', newline='') as csvfile:
