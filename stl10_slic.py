@@ -3,7 +3,7 @@ from color_slic import ColorSLIC
 import torchvision.datasets as datasets 
 import torchvision.transforms as T
 
-class SuperPixelGraphCIFAR10(ColorSLIC):
+class SuperPixelGraphSTL10(ColorSLIC):
     ds_name = 'STL10'
     def get_ds_name(self):
         self.features.sort()
