@@ -2,4 +2,5 @@ cifar10/
 cifar100/
 fashion_mnist/
 stl10/
+stanfordcars/
 __pycache__
