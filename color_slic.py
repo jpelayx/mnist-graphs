@@ -6,6 +6,7 @@ from torch_geometric.data import InMemoryDataset, Data
 from torch_geometric.loader import DataLoader
 import matplotlib.pyplot as plt
 from skimage.segmentation import slic
+from skimage.color import rgb2hsv
 import skimage as ski
 import time
 
@@ -16,11 +17,12 @@ class ColorSLIC(InMemoryDataset):
                     'std_deviation_centroid']
     implemented_features = ['avg_color',
                             'std_deviation_color',
-                            'std_deviation_color_single',
+                            'avg_color_hsv',
+                            'std_deviation_color_hsv',
                             'centroid',
                             'std_deviation_centroid',
                             'num_pixels']
-    ds_name = 'RGBSLIC'
+    ds_name = 'ColorSLIC'
     def __init__(self, 
                  root=None, 
                  n_segments= 75,  
@@ -55,15 +57,24 @@ class ColorSLIC(InMemoryDataset):
         return torch.cat([d.y for d in self])
 
     def select_features(self):
+        self.get_rgb = False
+        self.get_hsv = False
         self.get_avg_color = 'avg_color' in self.features
         if self.get_avg_color:
+            self.get_rgb = True
             print('\t+ avg_color')
         self.get_std_dev_color = 'std_deviation_color' in self.features
         if self.get_std_dev_color:
+            self.get_rgb = True
             print('\t+ std_deviation_color')
-        self.get_std_dev_color_single = 'std_deviation_color_single' in self.features
-        if self.get_std_dev_color_single:
-            print('\t+ std_deviation_color_single')
+        self.get_avg_color_hsv = 'avg_color_hsv' in self.features
+        if self.get_avg_color_hsv:
+            self.get_hsv = True
+            print('\t+ avg_color_hsv')
+        self.get_std_dev_color_hsv = 'std_deviation_color_hsv' in self.features
+        if self.get_std_dev_color_hsv:
+            self.get_hsv = True
+            print('\t+ std_deviation_color_hsv')
         self.get_centroid = 'centroid' in self.features
         if self.get_centroid:
             print('\t+ centroid')
@@ -77,7 +88,7 @@ class ColorSLIC(InMemoryDataset):
     def load(self):
         self.is_pre_loaded = False
         data = self.load_data()
-        img_total = data.data.shape[0]
+        img_total = len(data)
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
         print(f'Computing features: ')
         self.select_features()
@@ -94,6 +105,8 @@ class ColorSLIC(InMemoryDataset):
             img, y = d
             _, dim0, dim1 = img.shape
             img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
+            if self.get_hsv:
+                img_hsv = rgb2hsv(img_np)
             s = slic(img_np, self.n_segments, self.compactness, start_label=0)
             # rag_mean_color() fails when image is segmented into 1 superpixel 
             if np.any(s):
@@ -103,27 +116,39 @@ class ColorSLIC(InMemoryDataset):
             else: 
                 n = 1
                 edge_index = torch.tensor([]).to(torch.long)
-            s1 = np.zeros([n, 3])  # for mean color and std deviation
-            s2 = np.zeros([n, 3])  # for std deviation
+            if self.get_rgb:
+                s1 = np.zeros([n, 3])  # for mean color and std deviation
+                s2 = np.zeros([n, 3])  # for std deviation
+            if self.get_hsv:
+                s1_hsv = np.zeros([n,3])
+                s2_hsv = np.zeros([n,3])
             pos1 = np.zeros([n, 2]) # for centroid
             pos2 = np.zeros([n, 2]) # for centroid std deviation
             num_pixels = np.zeros([n, 1])
             for idx in range(dim0 * dim1):
                     idx_i, idx_j = idx % dim0, int(idx / dim0)
                     node = s[idx_i][idx_j] - 1
-                    s1[node][0]  += img_np[idx_i][idx_j][0]
-                    s2[node][0]  += pow(img_np[idx_i][idx_j][0], 2)
-                    s1[node][1]  += img_np[idx_i][idx_j][1]
-                    s2[node][1]  += pow(img_np[idx_i][idx_j][1], 2)
-                    s1[node][2]  += img_np[idx_i][idx_j][2]
-                    s2[node][2]  += pow(img_np[idx_i][idx_j][2], 2)
+                    if self.get_rgb:
+                        s1[node][0]  += img_np[idx_i][idx_j][0]
+                        s2[node][0]  += pow(img_np[idx_i][idx_j][0], 2)
+                        s1[node][1]  += img_np[idx_i][idx_j][1]
+                        s2[node][1]  += pow(img_np[idx_i][idx_j][1], 2)
+                        s1[node][2]  += img_np[idx_i][idx_j][2]
+                        s2[node][2]  += pow(img_np[idx_i][idx_j][2], 2)
+                    if self.get_hsv:
+                        s1_hsv[node][0]  += img_hsv[idx_i][idx_j][0]
+                        s2_hsv[node][0]  += pow(img_hsv[idx_i][idx_j][0], 2)
+                        s1_hsv[node][1]  += img_hsv[idx_i][idx_j][1]
+                        s2_hsv[node][1]  += pow(img_hsv[idx_i][idx_j][1], 2)
+                        s1_hsv[node][2]  += img_hsv[idx_i][idx_j][2]
+                        s2_hsv[node][2]  += pow(img_hsv[idx_i][idx_j][2], 2)
                     pos1[node][0] += idx_i
                     pos1[node][1] += idx_j
                     pos2[node][0] += pow(idx_i, 2)
                     pos2[node][1] += pow(idx_j, 2)
                     num_pixels[node][0] += 1
             x = []
-            if self.get_std_dev_color or self.get_avg_color:
+            if self.get_rgb:
                 s1 = s1/num_pixels
                 if self.get_avg_color:
                     avg_color = torch.from_numpy(s1).to(torch.float)
@@ -136,12 +161,19 @@ class ColorSLIC(InMemoryDataset):
                 x.append(std_dev[:,0])
                 x.append(std_dev[:,1])
                 x.append(std_dev[:,2])
-            if self.get_std_dev_color_single:
-                s2 = s2/num_pixels
-                std_dev = np.abs((s2 - s1*s1))
-                std_dev = np.sqrt(std_dev[:,0] + std_dev[:,1] + std_dev[:,2])
-                std_dev = torch.from_numpy(std_dev).to(torch.float)
-                x.append(std_dev)
+            if self.get_hsv:
+                s1_hsv = s1_hsv/num_pixels
+                if self.get_avg_color_hsv:
+                    avg_color_hsv = torch.from_numpy(s1_hsv).to(torch.float)
+                    x.append(avg_color_hsv[:,0])
+                    x.append(avg_color_hsv[:,1])
+                    x.append(avg_color_hsv[:,2])
+            if self.get_std_dev_color_hsv:
+                s2_hsv = s2_hsv/num_pixels
+                std_dev_hsv = torch.from_numpy(np.sqrt(np.abs((s2_hsv - s1_hsv*s1_hsv)))).to(torch.float)
+                x.append(std_dev_hsv[:,0])
+                x.append(std_dev_hsv[:,1])
+                x.append(std_dev_hsv[:,2])
             pos1 = pos1/num_pixels
             pos = torch.from_numpy(pos1).to(torch.float)
             if self.get_centroid:

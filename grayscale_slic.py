@@ -84,7 +84,7 @@ class GrayscaleSLIC(InMemoryDataset):
     def load(self):
         self.is_pre_loaded = False
         data = self.load_data()
-        img_total = data.data.shape[0]
+        img_total = len(data)
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
         print(f'Computing features: ')
         self.select_features()
