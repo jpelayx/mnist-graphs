@@ -62,6 +62,134 @@ cv::Mat grayscale_features(cv::Mat s, int n, cv::Mat img)
     return features;
 }
 
+cv::Mat color_features(cv::Mat s, int n, cv::Mat img)
+{
+    cv::Mat img_hsv;
+    cv::cvtColor(img, img_hsv, cv::COLOR_RGB2HSV);
+
+    std::vector<cv::Mat> rgb(3), hsv(3);
+    cv::split(img, rgb);
+    cv::split(img_hsv, hsv);
+    cv::Mat sr1 = cv::Mat::zeros(n, 1, CV_64F),
+            sg1 = cv::Mat::zeros(n, 1, CV_64F),
+            sb1 = cv::Mat::zeros(n, 1, CV_64F),
+            sr2 = cv::Mat::zeros(n, 1, CV_64F),
+            sg2 = cv::Mat::zeros(n, 1, CV_64F),
+            sb2 = cv::Mat::zeros(n, 1, CV_64F),
+            posi1 = cv::Mat::zeros(n, 1, CV_64F),
+            posj1 = cv::Mat::zeros(n, 1, CV_64F),
+            posi2 = cv::Mat::zeros(n, 1, CV_64F),
+            posj2 = cv::Mat::zeros(n, 1, CV_64F),
+            num_pixels = cv::Mat::zeros(n, 1, CV_64F),
+            sh1 = cv::Mat::zeros(n, 1, CV_64F),
+            ss1 = cv::Mat::zeros(n, 1, CV_64F),
+            sv1 = cv::Mat::zeros(n, 1, CV_64F),
+            sh2 = cv::Mat::zeros(n, 1, CV_64F),
+            ss2 = cv::Mat::zeros(n, 1, CV_64F),
+            sv2 = cv::Mat::zeros(n, 1, CV_64F);
+    int node;
+    float colorR, colorG, colorB, colorH, colorS, colorV;
+    for (int i=0; i<img.rows; i++)
+        for (int j=0; j<img.cols; j++)
+        {
+            node = s.at<int32_t>(i, j);
+            colorR = rgb[0].at<float>(i, j)/255;
+            colorG = rgb[1].at<float>(i, j)/255;
+            colorB = rgb[2].at<float>(i, j)/255;
+            colorH = hsv[0].at<float>(i, j)/255;
+            colorS = hsv[1].at<float>(i, j)/255;
+            colorV = hsv[2].at<float>(i, j)/255;
+            sr1.at<double>(node,0) += colorR;
+            sr2.at<double>(node,0) += pow(colorR, 2);
+            sg1.at<double>(node,0) += colorG;
+            sg2.at<double>(node,0) += pow(colorG, 2);
+            sb1.at<double>(node,0) += colorB;
+            sb2.at<double>(node,0) += pow(colorB, 2);
+            sh1.at<double>(node,0) += colorH;
+            sh2.at<double>(node,0) += pow(colorH, 2);
+            ss1.at<double>(node,0) += colorS;
+            ss2.at<double>(node,0) += pow(colorS, 2);
+            sv1.at<double>(node,0) += colorV;
+            sv2.at<double>(node,0) += pow(colorV, 2);
+            posi1.at<double>(node,0) += i;
+            posj1.at<double>(node,0) += j;
+            posi2.at<double>(node,0) += pow(i, 2);
+            posj2.at<double>(node,0) += pow(j, 2);
+            num_pixels.at<double>(node,0) += 1;
+        }
+    cv::Mat features(n, FEATURES_COLOR, CV_64F);
+    // color features
+    cv::divide(sr1, num_pixels, sr1);
+    cv::divide(sr2, num_pixels, sr2);
+    cv::divide(sg1, num_pixels, sg1);
+    cv::divide(sg2, num_pixels, sg2);
+    cv::divide(sb1, num_pixels, sb1);
+    cv::divide(sb2, num_pixels, sb2);
+    cv::divide(sh1, num_pixels, sh1);
+    cv::divide(sh2, num_pixels, sh2);
+    cv::divide(ss1, num_pixels, ss1);
+    cv::divide(ss2, num_pixels, ss2);
+    cv::divide(sv1, num_pixels, sv1);
+    cv::divide(sv2, num_pixels, sv2);
+    
+    cv::Mat avg_color_r = sr1;
+    cv::Mat std_dev_color_r = cv::abs(sr2 - sr1.mul(sr1));
+    cv::sqrt(std_dev_color_r, std_dev_color_r);
+    avg_color_r.copyTo(features.col(COLOR_AVG_COLOR_R));
+    std_dev_color_r.copyTo(features.col(COLOR_STD_DEV_COLOR_R));
+
+    cv::Mat avg_color_g = sg1;
+    cv::Mat std_dev_color_g = cv::abs(sg2 - sg1.mul(sg1));
+    cv::sqrt(std_dev_color_g, std_dev_color_g);
+    avg_color_g.copyTo(features.col(COLOR_AVG_COLOR_G));
+    std_dev_color_g.copyTo(features.col(COLOR_STD_DEV_COLOR_G));
+    
+    cv::Mat avg_color_b = sb1;
+    cv::Mat std_dev_color_b = cv::abs(sb2 - sb1.mul(sb1));
+    cv::sqrt(std_dev_color_b, std_dev_color_b);
+    avg_color_b.copyTo(features.col(COLOR_AVG_COLOR_B));
+    std_dev_color_b.copyTo(features.col(COLOR_STD_DEV_COLOR_B));
+    
+    cv::Mat avg_color_h = sh1;
+    cv::Mat std_dev_color_h = cv::abs(sh2 - sh1.mul(sh1));
+    cv::sqrt(std_dev_color_h, std_dev_color_h);
+    avg_color_h.copyTo(features.col(COLOR_AVG_COLOR_H));
+    std_dev_color_h.copyTo(features.col(COLOR_STD_DEV_COLOR_H));
+    
+    cv::Mat avg_color_s = ss1;
+    cv::Mat std_dev_color_s = cv::abs(ss2 - ss1.mul(ss1));
+    cv::sqrt(std_dev_color_s, std_dev_color_s);
+    avg_color_s.copyTo(features.col(COLOR_AVG_COLOR_S));
+    std_dev_color_s.copyTo(features.col(COLOR_STD_DEV_COLOR_S));
+    
+    cv::Mat avg_color_v = sv1;
+    cv::Mat std_dev_color_v = cv::abs(sv2 - sv1.mul(sv1));
+    cv::sqrt(std_dev_color_v, std_dev_color_v);
+    avg_color_v.copyTo(features.col(COLOR_AVG_COLOR_V));
+    std_dev_color_v.copyTo(features.col(COLOR_STD_DEV_COLOR_V));
+
+    // positional features
+    cv::divide(posi1, num_pixels, posi1);
+    cv::divide(posj1, num_pixels, posj1);
+    cv::divide(posi2, num_pixels, posi2);
+    cv::divide(posj2, num_pixels, posj2);
+    cv::Mat centroid_i = posi1;
+    cv::Mat centroid_j = posj1;
+    cv::Mat std_dev_centroid_i = cv::abs(posi2 - posi1.mul(posi1));
+    cv::sqrt(std_dev_centroid_i, std_dev_centroid_i);
+    cv::Mat std_dev_centroid_j = cv::abs(posj2 - posj1.mul(posj1));
+    cv::sqrt(std_dev_centroid_j, std_dev_centroid_j);
+    centroid_i.copyTo(features.col(COLOR_CENTROID_I));
+    centroid_j.copyTo(features.col(COLOR_CENTROID_J));
+    std_dev_centroid_i.copyTo(features.col(COLOR_STD_DEV_CENTROID_I));
+    std_dev_centroid_j.copyTo(features.col(COLOR_STD_DEV_CENTROID_J));
+
+    num_pixels.copyTo(features.col(COLOR_NUM_PIXELS));
+
+    return features;
+
+}
+
 PyArrayObject *get_edge_index(cv::Mat s)
 {
     std::set<std::pair<int, int>> adj;
@@ -173,21 +301,38 @@ PyArrayObject *to_numpy_float64(cv::Mat a)
 static PyObject* compute_features_color(PyObject *self, PyObject *args)
 {
     PyArrayObject *img_np;
-    if(!PyArg_ParseTuple(args, "O!", &PyArray_Type, &img_np))
+    int n_segments;
+    float compactness;
+    if(!PyArg_ParseTuple(args, "O!if", &PyArray_Type, &img_np, &n_segments, &compactness))
         return NULL;
-    
-    cv::Mat img = from_numpy(img_np);
 
-    PyArrayObject *x;
-    int64_t x_dims[3];
-    x_dims[0] = 10;
-    x_dims[1] = 10;
-    x_dims[2] = 10;
-    x = (PyArrayObject *) PyArray_SimpleNew(3, (npy_intp *)x_dims, PyArray_DOUBLE);
-    if (x == NULL)
+    cv::Mat img = from_numpy(img_np);
+    cv::Mat img_cie_lab;
+    cv::cvtColor(img, img_cie_lab, cv::COLOR_RGB2Lab);
+    int region_size = sqrt((img.rows*img.cols)/n_segments);
+    if (region_size < 1)
+        region_size = 1;
+    cv::Mat s;
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, cv::ximgproc::SLIC, region_size, compactness);
+    if (slic->getNumberOfSuperpixels() > 1)
+    {
+        slic->iterate();
+        slic->enforceLabelConnectivity(50);
+    }
+    slic->getLabels(s);
+    int n = slic->getNumberOfSuperpixels();
+
+    cv::Mat features = color_features(s, n, img);
+
+    PyArrayObject *features_np = to_numpy_float64(features);
+    if (features_np == NULL)
         return NULL;
-    
-    return PyArray_Return(x);    
+
+    PyArrayObject *edge_index = get_edge_index(s);
+    if (edge_index == NULL)
+        return NULL;
+
+    return Py_BuildValue("OO", PyArray_Return(features_np), PyArray_Return(edge_index));    
 }
 
 static PyObject* compute_features_gray(PyObject *self, PyObject *args)
@@ -213,12 +358,7 @@ static PyObject* compute_features_gray(PyObject *self, PyObject *args)
     int n = slic->getNumberOfSuperpixels();
 
     cv::Mat features = grayscale_features(s, n, img);
-    // std::cout << features << std::endl;
 
-    PyArrayObject *s_np = to_numpy_int32(s); // segments 
-    if (s_np == NULL)
-        return NULL;
-    
     PyArrayObject *features_np = to_numpy_float64(features);
     if (features_np == NULL)
         return NULL;
