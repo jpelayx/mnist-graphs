@@ -61,7 +61,7 @@ class ColorSLIC(InMemoryDataset):
         return torch.cat([d.y for d in self])
 
     def select_features(self):
-        self.feature_mask = []
+        self.features_mask = []
         self.features_mask.append('avg_color' in self.features)
         self.features_mask.append('avg_color' in self.features)
         self.features_mask.append('avg_color' in self.features)
@@ -115,7 +115,7 @@ class ColorSLIC(InMemoryDataset):
             img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
             features, edge_index = color_features(img_np, self.n_segments, self.compactness)
             pos = features[:, 6:8]
-            features = features[:,self.feature_mask]
+            features = features[:,self.features_mask]
             return Data(x=torch.from_numpy(features).to(torch.float), edge_index=torch.from_numpy(edge_index).to(torch.long), pos=torch.from_numpy(pos).to(torch.float), y=y)
 
     def save_stats(self, data):
