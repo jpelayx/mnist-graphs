@@ -1,11 +1,4 @@
 #!/bin/sh
-
-python model.py --features "avg_color" --dataset stanfordcars --quiet 
-python model.py --features "avg_color centroid" --dataset stanfordcars --quiet 
-python model.py --features "avg_color std_deviation_color centroid" --dataset stanfordcars --quiet 
-python model.py --features "avg_color std_deviation_color centroid std_deviation_centroid" --dataset stanfordcars --quiet 
-python model.py --features "avg_color std_deviation_color centroid num_pixels" --dataset stanfordcars --quiet 
-
 python model.py --features "avg_color std_deviation_color centroid std_deviation_centroid" --dataset stanfordcars --n_segments 10 --quiet 
 python model.py --features "avg_color std_deviation_color centroid std_deviation_centroid" --dataset stanfordcars --n_segments 20 --quiet 
 python model.py --features "avg_color std_deviation_color centroid std_deviation_centroid" --dataset stanfordcars --n_segments 50 --quiet 
