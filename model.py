@@ -77,73 +77,85 @@ def test(dataloader, model, loss_fn, device, labels):
     return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weighted)": f1_weighted, "Avg loss": test_loss}
 
 
-def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset):
+def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset, use_ext):
     if dataset == 'mnist':
         test_ds  = mnist_slic.SuperPixelGraphMNIST(root=test_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
-                                                   train=False)
+                                                   train=False,
+                                                   use_ext=use_ext)
         train_ds = mnist_slic.SuperPixelGraphMNIST(root=train_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
-                                                   train=True)
+                                                   train=True,
+                                                   use_ext=use_ext)
     if dataset == 'fashion_mnist':
         test_ds  = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=test_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
-                                                   train=False)
+                                                   train=False,
+                                                   use_ext=use_ext)
         train_ds = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=train_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
-                                                   train=True)
+                                                   train=True,
+                                                   use_ext=use_ext)
     if dataset == 'cifar10':
         test_ds  = cifar10_slic.SuperPixelGraphCIFAR10(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=False)
+                                                       train=False,
+                                                       use_ext=use_ext)
         train_ds = cifar10_slic.SuperPixelGraphCIFAR10(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=True)
+                                                       train=True,
+                                                       use_ext=use_ext)
     if dataset == 'cifar100':
         test_ds  = cifar100_slic.SuperPixelGraphCIFAR100(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=False)
+                                                       train=False,
+                                                       use_ext=use_ext)
         train_ds = cifar100_slic.SuperPixelGraphCIFAR100(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=True)
+                                                       train=True,
+                                                       use_ext=use_ext)
     if dataset == 'stl10':
         test_ds  = stl10_slic.SuperPixelGraphSTL10(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=False)
+                                                       train=False,
+                                                       use_ext=use_ext)
         train_ds = stl10_slic.SuperPixelGraphSTL10(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=True)
+                                                       train=True,
+                                                       use_ext=use_ext)
     if dataset == 'stanfordcars':
         test_ds  = stanfordcars_slic.SuperPixelGraphStanfordCars(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=False)
+                                                       train=False,
+                                                       use_ext=use_ext)
         train_ds = stanfordcars_slic.SuperPixelGraphStanfordCars(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
-                                                       train=True)
+                                                       train=True,
+                                                       use_ext=use_ext)
     labels = test_ds.get_labels()
     ds = ConcatDataset([train_ds, test_ds])
     targets = torch.cat([train_ds.get_targets(), test_ds.get_targets()])
@@ -177,6 +189,8 @@ if __name__ == '__main__':
                         help="output file for information about training")
     parser.add_argument("--dataset", default='mnist',
                         help="dataset to train against")
+    parser.add_argument("--use_feature_extension", action='store_true',
+                        help="use faster feature computing with C++ OpenCV extensions (may not work)")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
@@ -204,7 +218,8 @@ if __name__ == '__main__':
                                       args.features,
                                       args.traindir,
                                       args.testdir,
-                                      args.dataset)
+                                      args.dataset,
+                                      args.use_feature_extension)
     if args.out is None:
         out = './{}/n{}-c{}-{}.csv'.format(args.dataset,
                                          ds.datasets[0].n_segments,
