@@ -7,10 +7,9 @@ class SuperPixelGraphMNIST(GrayscaleSLIC):
     ds_name = 'MNIST'
     def get_ds_name(self):
         self.features.sort()
-        return  './mnist/{}-n{}-c{}-{}'.format('train' if self.train else 'test', 
-                                                 self.n_segments, 
-                                                 self.compactness,
-                                                 '-'.join(self.features))
+        return  './mnist/{}-n{}-c{}'.format('train' if self.train else 'test', 
+                                            self.n_segments, 
+                                            self.compactness)
     def get_labels(self):
         return list(range(10))
     def load_data(self):

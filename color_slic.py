@@ -10,7 +10,13 @@ from skimage.color import rgb2hsv
 import skimage as ski
 import time
 
-from compute_features import color_features
+try:
+    from compute_features import color_features
+except ImportError:
+    extension_availabe = False
+else:
+    extension_availabe = True
+
 
 class ColorSLIC(InMemoryDataset):
     std_features = ['avg_color',
@@ -32,16 +38,20 @@ class ColorSLIC(InMemoryDataset):
                  n_segments= 75,  
                  compactness = 0.1, 
                  features = None, 
-                 train = True):
+                 train = True,
+                 use_ext = True):
         self.train = train
         self.n_segments = n_segments
         self.compactness = compactness
         self.features = self.std_features if features is None else features
         self.root = self.get_ds_name() if root is None else root
+        self.use_ext = use_ext
 
         self.is_pre_loaded = True
-        super().__init__(self.root, None, None, None)
+        super().__init__(root=self.root, transform=self.filter_features)
         self.data, self.slices = torch.load(self.processed_paths[0])
+        
+        self.select_features()
         
         self.get_stats()
         print(self.ds_name + " Loaded.")
@@ -62,37 +72,40 @@ class ColorSLIC(InMemoryDataset):
 
     def select_features(self):
         self.features_mask = []
-        self.features_mask.append('avg_color' in self.features)
-        self.features_mask.append('avg_color' in self.features)
-        self.features_mask.append('avg_color' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ avg_color')
-        self.features_mask.append('std_deviation_color' in self.features)
-        self.features_mask.append('std_deviation_color' in self.features)
-        self.features_mask.append('std_deviation_color' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ std_deviation_color')
-        self.features_mask.append('centroid' in self.features)
-        self.features_mask.append('centroid' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ centroid')
-        self.features_mask.append('std_deviation_centroid' in self.features)
-        self.features_mask.append('std_deviation_centroid' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ std_deviation_centroid')
-        self.features_mask.append('num_pixels' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ num_pixels')
-        self.features_mask.append('avg_color_hsv' in self.features)
-        self.features_mask.append('avg_color_hsv' in self.features)
-        self.features_mask.append('avg_color_hsv' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ avg_color_hsv')
-        self.features_mask.append('std_deviation_color_hsv' in self.features)
-        self.features_mask.append('std_deviation_color_hsv' in self.features)
-        self.features_mask.append('std_deviation_color_hsv' in self.features)
-        if self.features_mask[-1]:
-            print('\t+ std_deviation_color_hsv')
+        self.features_dict = {}
+        self.add_feature('avg_color')
+        self.add_feature('std_deviation_color')
+        self.add_feature('centroid')
+        self.add_feature('std_deviation_centroid')
+        self.add_feature('num_pixels')
+        self.add_feature('avg_color_hsv')
+        self.add_feature('std_deviation_color_hsv')
+        self.print_features()
+    
+    def add_feature(self, feature):
+        f = feature in self.features
+        if 'color' in feature:
+            self.features_mask.append(f)
+            self.features_mask.append(f)
+            self.features_mask.append(f)
+        elif 'centroid' in feature:
+            self.features_mask.append(f)
+            self.features_mask.append(f)
+        else:
+            self.features_mask.append(f)
+        self.features_dict[feature] = f
+    
+    def print_features(self):
+        print('Selected features: ')
+        for feature in self.features_dict:
+            if self.features_dict[feature]:
+                print('\t+ ' + feature)
+    
+    def filter_features(self, data):
+        x_trans = data.x.numpy()
+        x_trans = x_trans[:, self.features_mask]
+        data.x = torch.from_numpy(x_trans).to(torch.float)
+        return data
 
     def load(self):
         self.is_pre_loaded = False
@@ -100,23 +113,97 @@ class ColorSLIC(InMemoryDataset):
         img_total = len(data)
         print(f'Loading {img_total} images with n_segments = {self.n_segments} ...')
         print(f'Computing features: ')
-        self.select_features()
 
         t = time.time()
-        data_list = [self.create_data_obj(d) for d in data]
+        if self.use_ext and extension_availabe:
+            data_list = [self.create_data_obj_ext(d) for d in data]
+        else:
+            data_list = [self.create_data_obj(d) for d in data]
         t = time.time() - t
         self.loading_time = t
         print(f'Done in {t}s')
         self.save_stats(data_list)
         return self.collate(data_list)
 
-    def create_data_obj(self, d):
+    def create_data_obj_ext(self, d):
             img, y = d
             img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
             features, edge_index = color_features(img_np, self.n_segments, self.compactness)
             pos = features[:, 6:8]
-            features = features[:,self.features_mask]
             return Data(x=torch.from_numpy(features).to(torch.float), edge_index=torch.from_numpy(edge_index).to(torch.long), pos=torch.from_numpy(pos).to(torch.float), y=y)
+
+    def create_data_obj(self, d):
+            img, y = d
+            _, dim0, dim1 = img.shape
+            img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
+            img_hsv = rgb2hsv(img_np)
+            s = slic(img_np, self.n_segments, self.compactness, start_label=0)
+            # rag_mean_color() fails when image is segmented into 1 superpixel 
+            if np.any(s):
+                g = ski.future.graph.rag_mean_color(img_np, s)
+                n = g.number_of_nodes()
+                edge_index = torch.from_numpy(np.array(g.edges).T).to(torch.long)
+            else: 
+                n = 1
+                edge_index = torch.tensor([]).to(torch.long)
+            s1 = np.zeros([n, 3])  # for mean color and std deviation
+            s2 = np.zeros([n, 3])  # for std deviation
+            s1_hsv = np.zeros([n,3])
+            s2_hsv = np.zeros([n,3])
+            pos1 = np.zeros([n, 2]) # for centroid
+            pos2 = np.zeros([n, 2]) # for centroid std deviation
+            num_pixels = np.zeros([n, 1])
+            for idx in range(dim0 * dim1):
+                    idx_i, idx_j = idx % dim0, int(idx / dim0)
+                    node = s[idx_i][idx_j] - 1
+                    s1[node][0]  += img_np[idx_i][idx_j][0]
+                    s2[node][0]  += pow(img_np[idx_i][idx_j][0], 2)
+                    s1[node][1]  += img_np[idx_i][idx_j][1]
+                    s2[node][1]  += pow(img_np[idx_i][idx_j][1], 2)
+                    s1[node][2]  += img_np[idx_i][idx_j][2]
+                    s2[node][2]  += pow(img_np[idx_i][idx_j][2], 2)
+                    s1_hsv[node][0]  += img_hsv[idx_i][idx_j][0]
+                    s2_hsv[node][0]  += pow(img_hsv[idx_i][idx_j][0], 2)
+                    s1_hsv[node][1]  += img_hsv[idx_i][idx_j][1]
+                    s2_hsv[node][1]  += pow(img_hsv[idx_i][idx_j][1], 2)
+                    s1_hsv[node][2]  += img_hsv[idx_i][idx_j][2]
+                    s2_hsv[node][2]  += pow(img_hsv[idx_i][idx_j][2], 2)
+                    pos1[node][0] += idx_i
+                    pos1[node][1] += idx_j
+                    pos2[node][0] += pow(idx_i, 2)
+                    pos2[node][1] += pow(idx_j, 2)
+                    num_pixels[node][0] += 1
+            x = []
+            s1 = s1/num_pixels
+            avg_color = torch.from_numpy(s1).to(torch.float)
+            x.append(avg_color[:,0])
+            x.append(avg_color[:,1])
+            x.append(avg_color[:,2])
+            s2 = s2/num_pixels
+            std_dev = torch.from_numpy(np.sqrt(np.abs((s2 - s1*s1)))).to(torch.float)
+            x.append(std_dev[:,0])
+            x.append(std_dev[:,1])
+            x.append(std_dev[:,2])
+            s1_hsv = s1_hsv/num_pixels
+            avg_color_hsv = torch.from_numpy(s1_hsv).to(torch.float)
+            x.append(avg_color_hsv[:,0])
+            x.append(avg_color_hsv[:,1])
+            x.append(avg_color_hsv[:,2])
+            s2_hsv = s2_hsv/num_pixels
+            std_dev_hsv = torch.from_numpy(np.sqrt(np.abs((s2_hsv - s1_hsv*s1_hsv)))).to(torch.float)
+            x.append(std_dev_hsv[:,0])
+            x.append(std_dev_hsv[:,1])
+            x.append(std_dev_hsv[:,2])
+            pos1 = pos1/num_pixels
+            pos = torch.from_numpy(pos1).to(torch.float)
+            x.append(pos[:,0])
+            x.append(pos[:,1])
+            pos2 = pos2/num_pixels
+            std_dev_centroid = torch.from_numpy(np.sqrt(np.abs(pos2 - pos1*pos1))).to(torch.float)
+            x.append(std_dev_centroid[:,0])
+            x.append(std_dev_centroid[:,1])
+            x.append(torch.from_numpy(num_pixels.flatten()).to(torch.float))
+            return Data(x=torch.stack(x, dim=1), edge_index=edge_index, pos=pos, y=y)
 
     def save_stats(self, data):
         nodes = [d.num_nodes for d in data]

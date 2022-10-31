@@ -7,10 +7,9 @@ class SuperPixelGraphFashionMNIST(GrayscaleSLIC):
     ds_name = 'FashionMNIST'
     def get_ds_name(self):
         self.features.sort()
-        return  './fashion_mnist/{}-n{}-c{}-{}'.format('train' if self.train else 'test', 
-                                                 self.n_segments, 
-                                                 self.compactness,
-                                                 '-'.join(self.features))
+        return  './fashion_mnist/{}-n{}-c{}'.format('train' if self.train else 'test', 
+                                                    self.n_segments, 
+                                                    self.compactness)
     def get_labels(self):
         return list(range(10))
     def load_data(self):
