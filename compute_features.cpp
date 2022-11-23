@@ -310,10 +310,10 @@ static PyObject* compute_features_color(PyObject *self, PyObject *args)
     cv::Mat img_cie_lab;
     cv::cvtColor(img, img_cie_lab, cv::COLOR_RGB2Lab);
     int region_size = sqrt((img.rows*img.cols)/n_segments);
-    if (region_size < 1)
-        region_size = 1;
+    if (region_size < 2)
+        region_size = 2;
     cv::Mat s;
-    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, cv::ximgproc::SLIC, region_size, compactness);
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, cv::ximgproc::SLICO, region_size);
     if (slic->getNumberOfSuperpixels() > 1)
     {
         slic->iterate();
@@ -344,15 +344,18 @@ static PyObject* compute_features_gray(PyObject *self, PyObject *args)
         return NULL;
 
     cv::Mat img = from_numpy(img_np);
+    cv::Mat img_cie_lab;
+    cv::cvtColor(img, img_cie_lab, cv::COLOR_GRAY2RGB);
+    cv::cvtColor(img_cie_lab, img_cie_lab, cv::COLOR_RGB2Lab);
     int region_size = sqrt((img.rows*img.cols)/n_segments);
-    if (region_size < 1)
-        region_size = 1;
+    if (region_size < 2)
+        region_size = 2;
     cv::Mat s;
-    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img, cv::ximgproc::SLIC, region_size, compactness);
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, cv::ximgproc::SLICO, region_size);
     if (slic->getNumberOfSuperpixels() > 1)
     {
         slic->iterate();
-        slic->enforceLabelConnectivity(50);
+        slic->enforceLabelConnectivity(25);
     }
     slic->getLabels(s);
     int n = slic->getNumberOfSuperpixels();

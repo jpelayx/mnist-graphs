@@ -41,13 +41,19 @@ class GrayscaleSLIC(InMemoryDataset):
                  compactness = 0.1, 
                  features = None, # possible features are avg_color, centroid, std_deviation_color 
                  train = True,
-                 use_ext = True):
+                 use_ext = True,
+                 pre_select_features = False):
         self.train = train
         self.n_segments = n_segments
         self.compactness = compactness
         self.features = self.std_features if features is None else features
-        self.root = self.get_ds_name() if root is None else root
         self.use_ext = use_ext
+        self.pre_select_features = pre_select_features
+
+        if root is None:
+            self.root = self.get_ds_name_with_features() if self.pre_select_features else self.get_ds_name()
+        else:
+            self.root = root
 
         self.is_pre_loaded = True
         super().__init__(root=self.root, transform=self.filter_features)
@@ -61,6 +67,9 @@ class GrayscaleSLIC(InMemoryDataset):
         print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
 
     def get_ds_name(self):
+        raise NotImplementedError
+    
+    def get_ds_name_with_features(self):
         raise NotImplementedError
     
     def get_labels(self):

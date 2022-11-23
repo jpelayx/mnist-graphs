@@ -6,10 +6,15 @@ import torchvision.transforms as T
 class SuperPixelGraphStanfordCars(ColorSLIC):
     ds_name = 'StanfordCars'
     def get_ds_name(self):
-        self.features.sort()
         return  './stanfordcars/{}-n{}-c{}'.format('train' if self.train else 'test', 
                                                    self.n_segments, 
                                                    self.compactness)
+    def get_ds_name_with_features(self):
+        self.features.sort()
+        return  './stanfordcars/{}-n{}-c{}-{}'.format('train' if self.train else 'test', 
+                                                      self.n_segments, 
+                                                      self.compactness,
+                                                      '-'.join(self.features))
     def get_labels(self):
         return list(range(196))
     def load_data(self):

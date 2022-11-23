@@ -39,19 +39,25 @@ class ColorSLIC(InMemoryDataset):
                  compactness = 0.1, 
                  features = None, 
                  train = True,
-                 use_ext = True):
+                 use_ext = True,
+                 pre_select_features = False):
         self.train = train
         self.n_segments = n_segments
         self.compactness = compactness
         self.features = self.std_features if features is None else features
-        self.root = self.get_ds_name() if root is None else root
         self.use_ext = use_ext
+        self.pre_select_features = pre_select_features
+
+        if root is None:
+            self.root = self.get_ds_name_with_features() if self.pre_select_features else self.get_ds_name()
+        else:
+            self.root = root
 
         self.is_pre_loaded = True
-        super().__init__(root=self.root, transform=self.filter_features)
-        self.data, self.slices = torch.load(self.processed_paths[0])
-        
         self.select_features()
+        transform = None if self.pre_select_features else self.filter_features
+        super().__init__(root=self.root, transform=transform)
+        self.data, self.slices = torch.load(self.processed_paths[0])
         
         self.get_stats()
         print(self.ds_name + " Loaded.")
@@ -59,6 +65,9 @@ class ColorSLIC(InMemoryDataset):
         print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
 
     def get_ds_name(self):
+        raise NotImplementedError
+
+    def get_ds_name_with_features(self):
         raise NotImplementedError
     
     def get_labels(self):
@@ -116,9 +125,15 @@ class ColorSLIC(InMemoryDataset):
 
         t = time.time()
         if self.use_ext and extension_availabe:
-            data_list = [self.create_data_obj_ext(d) for d in data]
+            if self.pre_select_features:
+                data_list = [self.filter_features(self.create_data_obj_ext(d)) for d in data]
+            else:
+                data_list = [self.create_data_obj_ext(d) for d in data]
         else:
-            data_list = [self.create_data_obj(d) for d in data]
+            if self.pre_select_features:
+                data_list = [self.filter_features(self.create_data_obj(d)) for d in data]
+            else:
+                data_list = [self.create_data_obj(d) for d in data]
         t = time.time() - t
         self.loading_time = t
         print(f'Done in {t}s')

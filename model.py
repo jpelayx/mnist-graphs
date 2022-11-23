@@ -43,7 +43,7 @@ class GCN(torch.nn.Module):
         return out 
 
 def train(dataloader, model, loss_fn, optimizer, device):
-    for batch, b in enumerate(dataloader):
+    for _, b in enumerate(dataloader):
         b.to(device)
         pred = model(b.x, b.edge_index, b.batch)
         loss = loss_fn(pred, b.y)
@@ -51,10 +51,6 @@ def train(dataloader, model, loss_fn, optimizer, device):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch
-            # print(f"loss: {loss:>7f}  [{(current*64):>5d}/{size:>5d}]")
 
 def test(dataloader, model, loss_fn, device, labels):
     num_batches = len(dataloader)
@@ -67,7 +63,6 @@ def test(dataloader, model, loss_fn, device, labels):
             test_loss += loss_fn(pred, d.y).item()
             Y = torch.cat([Y, d.y.to('cpu')])
             Y_pred = torch.cat([Y_pred, pred.to('cpu')])
-
     test_loss /= num_batches
     Y_pred = torch.argmax(Y_pred, dim=1)
     accuracy = accuracy_score(Y, Y_pred)
@@ -77,85 +72,100 @@ def test(dataloader, model, loss_fn, device, labels):
     return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weighted)": f1_weighted, "Avg loss": test_loss}
 
 
-def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset, use_ext):
+def load_dataset(n_segments, compactness, features, train_dir, test_dir, dataset, use_ext, pre_select_features):
     if dataset == 'mnist':
         test_ds  = mnist_slic.SuperPixelGraphMNIST(root=test_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
                                                    train=False,
-                                                   use_ext=use_ext)
+                                                   use_ext=use_ext,
+                                                   pre_select_features=pre_select_features)
         train_ds = mnist_slic.SuperPixelGraphMNIST(root=train_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
                                                    train=True,
-                                                   use_ext=use_ext)
-    if dataset == 'fashion_mnist':
+                                                   use_ext=use_ext,
+                                                   pre_select_features=pre_select_features)
+    elif dataset == 'fashion_mnist':
         test_ds  = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=test_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
                                                    train=False,
-                                                   use_ext=use_ext)
+                                                   use_ext=use_ext,
+                                                   pre_select_features=pre_select_features)
         train_ds = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=train_dir, 
                                                    n_segments=n_segments,
                                                    compactness=compactness,
                                                    features=features,
                                                    train=True,
-                                                   use_ext=use_ext)
-    if dataset == 'cifar10':
+                                                   use_ext=use_ext,
+                                                   pre_select_features=pre_select_features)
+    elif dataset == 'cifar10':
         test_ds  = cifar10_slic.SuperPixelGraphCIFAR10(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=False,
-                                                       use_ext=use_ext)
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
         train_ds = cifar10_slic.SuperPixelGraphCIFAR10(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True,
-                                                       use_ext=use_ext)
-    if dataset == 'cifar100':
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
+    elif dataset == 'cifar100':
         test_ds  = cifar100_slic.SuperPixelGraphCIFAR100(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=False,
-                                                       use_ext=use_ext)
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
         train_ds = cifar100_slic.SuperPixelGraphCIFAR100(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True,
-                                                       use_ext=use_ext)
-    if dataset == 'stl10':
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
+    elif dataset == 'stl10':
         test_ds  = stl10_slic.SuperPixelGraphSTL10(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=False,
-                                                       use_ext=use_ext)
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
         train_ds = stl10_slic.SuperPixelGraphSTL10(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True,
-                                                       use_ext=use_ext)
-    if dataset == 'stanfordcars':
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
+    elif dataset == 'stanfordcars':
         test_ds  = stanfordcars_slic.SuperPixelGraphStanfordCars(root=test_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=False,
-                                                       use_ext=use_ext)
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
         train_ds = stanfordcars_slic.SuperPixelGraphStanfordCars(root=train_dir, 
                                                        n_segments=n_segments,
                                                        compactness=compactness,
                                                        features=features,
                                                        train=True,
-                                                       use_ext=use_ext)
+                                                       use_ext=use_ext,
+                                                       pre_select_features=pre_select_features)
+    else:
+        print('No dataset called: \"' + dataset + '\" available.')
+        
     labels = test_ds.get_labels()
     ds = ConcatDataset([train_ds, test_ds])
     targets = torch.cat([train_ds.get_targets(), test_ds.get_targets()])
@@ -191,6 +201,8 @@ if __name__ == '__main__':
                         help="dataset to train against")
     parser.add_argument("--use_feature_extension", action='store_true',
                         help="use faster feature computing with C++ OpenCV extensions (may not work)")
+    parser.add_argument("--pre_select_features", action='store_true',
+                        help="only save selected features when loading dataset")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
@@ -219,7 +231,8 @@ if __name__ == '__main__':
                                       args.traindir,
                                       args.testdir,
                                       args.dataset,
-                                      args.use_feature_extension)
+                                      args.use_feature_extension,
+                                      args.pre_select_features)
     if args.out is None:
         out = './{}/n{}-c{}-{}.csv'.format(args.dataset,
                                          ds.datasets[0].n_segments,

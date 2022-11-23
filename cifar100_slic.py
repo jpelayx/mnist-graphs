@@ -10,6 +10,12 @@ class SuperPixelGraphCIFAR100(ColorSLIC):
         return  './cifar100/{}-n{}-c{}'.format('train' if self.train else 'test', 
                                                self.n_segments, 
                                                self.compactness)
+    def get_ds_name_with_features(self):
+        self.features.sort()
+        return  './cifar100/{}-n{}-c{}-{}'.format('train' if self.train else 'test', 
+                                                  self.n_segments, 
+                                                  self.compactness,
+                                                  '-'.join(self.features))
     def get_labels(self):
         return list(range(100))
     def load_data(self):
