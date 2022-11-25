@@ -6,6 +6,36 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/ximgproc/slic.hpp>
 
+// graph types
+enum GraphType
+{
+	RAG,
+	KNN_SPATIAL_1,
+	KNN_SPATIAL_2,
+	KNN_SPATIAL_4,
+	KNN_SPATIAL_8,
+	KNN_SPATIAL_16,
+	KNN_FEATURE_1,
+	KNN_FEATURE_2,
+	KNN_FEATURE_4,
+	KNN_FEATURE_8,
+	KNN_FEATURE_16
+};
+
+enum DistanceMeasure
+{
+    SPATIAL,
+    FEATURE
+};
+
+// segmentation methods
+enum SegmentationMethod
+{
+	ADAPTATIVE_SLIC,
+	NORMAL_SLIC,
+    GRID
+};
+
 // grayscale features
 #define GRAY_AVG_COLOR 0
 #define GRAY_STD_DEV_COLOR 1
@@ -39,7 +69,11 @@
 #define FEATURES_COLOR 17
 
 
-PyArrayObject *get_edge_index(cv::Mat s);
+PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type);
+std::set<std::pair<int, int>> RAG_adj(cv::Mat s);
+std::set<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure d);
+float feature_distance(int u, int v, cv::Mat features);
+float spatial_distance(int u, int v, cv::Mat features);
 
 cv::Mat grayscale_features(cv::Mat s, int n, cv::Mat img);
 cv::Mat color_features(cv::Mat s, int n, cv::Mat img);

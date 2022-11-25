@@ -3,4 +3,11 @@ cifar100/
 fashion_mnist/
 stl10/
 stanfordcars/
+mnist/
 __pycache__
+dist
+build
+.vscode
+.ipynb_checkpoints
+*.egg-info
+setup.py
