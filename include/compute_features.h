@@ -70,8 +70,9 @@ enum SegmentationMethod
 
 
 PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type);
-std::set<std::pair<int, int>> RAG_adj(cv::Mat s);
-std::set<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure d);
+std::vector<std::pair<int, int>> RAG_adj(cv::Mat s);
+std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure distance_measure);
+float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_measure);
 float feature_distance(int u, int v, cv::Mat features);
 float spatial_distance(int u, int v, cv::Mat features);
 

@@ -191,7 +191,7 @@ cv::Mat color_features(cv::Mat s, int n, cv::Mat img)
 }
 
 
-std::set<std::pair<int, int>> RAG_adj(cv::Mat s)
+std::vector<std::pair<int, int>> RAG_adj(cv::Mat s)
 {
     std::set<std::pair<int, int>> adj;
     int current, other;
@@ -202,29 +202,45 @@ std::set<std::pair<int, int>> RAG_adj(cv::Mat s)
             if(i-1 >= 0 && current != s.at<int32_t>(i-1, j))
             {
                 other = s.at<int32_t>(i-1, j);
-                std::pair<int, int> edge = std::make_pair(std::min(current, other), std::max(current, other));
-                adj.emplace(edge);
+                std::pair<int, int> edge = std::make_pair(current, other);
+                adj.insert(edge);
             }
             if(i+1 < s.rows && current != s.at<int32_t>(i+1, j))
             {
                 other = s.at<int32_t>(i+1, j);
-                std::pair<int, int> edge = std::make_pair(std::min(current, other), std::max(current, other));
-                adj.emplace(edge);
+                std::pair<int, int> edge = std::make_pair(current, other);
+                adj.insert(edge);
             }
             if(j-1 >= 0 && current != s.at<int32_t>(i, j-1))
             {
                 other = s.at<int32_t>(i, j-1);
-                std::pair<int, int> edge = std::make_pair(std::min(current, other), std::max(current, other));
-                adj.emplace(edge);
+                std::pair<int, int> edge = std::make_pair(current, other);
+                adj.insert(edge);
             }
             if(j+1 < s.cols && current != s.at<int32_t>(i, j+1))
             {
                 other = s.at<int32_t>(i, j+1);
-                std::pair<int, int> edge = std::make_pair(std::min(current, other), std::max(current, other));
-                adj.emplace(edge);
+                std::pair<int, int> edge = std::make_pair(current, other);
+                adj.insert(edge);
             }
         }
-    return adj;
+    std::vector<std::pair<int, int>> adj_vec(adj.begin(), adj.end());
+    return adj_vec;
+}
+
+float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_measure)
+{
+    if(u == v)
+        return 0.0;
+
+    switch (distance_measure)
+    {
+    case SPATIAL:
+        return spatial_distance(u, v, features);
+    case FEATURE:
+        return feature_distance(u, v, features);
+    }
+    return 0.0;
 }
 
 float spatial_distance(int u, int v, cv::Mat features)
@@ -254,59 +270,79 @@ float feature_distance(int u, int v, cv::Mat features)
     return sqrt(d);
 }
 
-std::set<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure d)
+std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure distance_measure)
 {
-    std::set<std::pair<int, int>> adj;
+    std::vector<std::pair<int, int>> adj;
     int n = features.rows;
+    std::vector<std::pair<float, int>> distances(n);
 
     for(int u = 0; u<n; u++)
     {
-
-        for(int v = 0; v<n; v++)
+        // initialize distances vector
+        for(int v=0; v<n; v++)
         {
-            
+            distances[v].first = compute_distance(u, v, features, distance_measure);
+            distances[v].second = v;
+        }
+        std::sort(distances.begin(), distances.end());
+
+        // get k nearest (not including itself)
+        int ks = 0, i = 0;
+        while(ks < k)
+        {
+            if(u != distances[i].second)
+            {
+                std::pair<int, int> edge0, edge1;
+                edge0.first = u;
+                edge0.second = distances[i].second;
+                edge1.first = distances[i].second;
+                edge1.second = u;
+                adj.push_back(edge0);
+                adj.push_back(edge1);
+                ks++;
+            }
+            i++;
         }
     }
-    
-    
+    return adj;  
 }
 
 PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type)
 {
-    std::set<std::pair<int, int>> adj;
+    std::vector<std::pair<int, int>> adj;
     switch (graph_type)
     {
-	RAG:
+	case RAG:
         adj = RAG_adj(s);
 		break;
-	KNN_SPATIAL_1:
+	case KNN_SPATIAL_1:
 		adj = KNN_adj(s, features, 1, SPATIAL);
 		break;
-	KNN_SPATIAL_2:
+	case KNN_SPATIAL_2:
 		adj = KNN_adj(s, features, 2, SPATIAL);
 		break;
-	KNN_SPATIAL_4:
+	case KNN_SPATIAL_4:
 		adj = KNN_adj(s, features, 4, SPATIAL);
 		break;
-	KNN_SPATIAL_8:
+	case KNN_SPATIAL_8:
 		adj = KNN_adj(s, features, 8, SPATIAL);
 		break;
-	KNN_SPATIAL_16:
+	case KNN_SPATIAL_16:
 		adj = KNN_adj(s, features, 16, SPATIAL);
 		break;
-	KNN_FEATURE_1:
+	case KNN_FEATURE_1:
 		adj = KNN_adj(s, features, 1, FEATURE);
 		break;
-	KNN_FEATURE_2:
+	case KNN_FEATURE_2:
 		adj = KNN_adj(s, features, 2, FEATURE);
 		break;
-	KNN_FEATURE_4:
+	case KNN_FEATURE_4:
 		adj = KNN_adj(s, features, 4, FEATURE);
 		break;
-	KNN_FEATURE_8:
+	case KNN_FEATURE_8:
 		adj = KNN_adj(s, features, 8, FEATURE);
 		break;
-	KNN_FEATURE_16:
+	case KNN_FEATURE_16:
 		adj = KNN_adj(s, features, 16, FEATURE);
         break;
     }
@@ -419,7 +455,7 @@ static PyObject* compute_features_color(PyObject *self, PyObject *args)
     if (features_np == NULL)
         return NULL;
 
-    PyArrayObject *edge_index = get_edge_index(s, graph_type);
+    PyArrayObject *edge_index = get_edge_index(s, features, graph_type);
     if (edge_index == NULL)
         return NULL;
     
@@ -461,7 +497,7 @@ static PyObject* compute_features_gray(PyObject *self, PyObject *args)
     if (features_np == NULL)
         return NULL;
 
-    PyArrayObject *edge_index = get_edge_index(s, graph_type);
+    PyArrayObject *edge_index = get_edge_index(s, features, graph_type);
     if (edge_index == NULL)
         return NULL;
 

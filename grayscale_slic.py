@@ -47,7 +47,6 @@ class GrayscaleSLIC(InMemoryDataset):
         self.n_segments = n_segments
         self.compactness = compactness
         self.features = self.std_features if features is None else features
-        self.use_ext = use_ext
         self.pre_select_features = pre_select_features
 
         if root is None:
