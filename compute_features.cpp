@@ -190,7 +190,8 @@ cv::Mat color_features(cv::Mat s, int n, cv::Mat img)
 
 }
 
-PyArrayObject *get_edge_index(cv::Mat s)
+
+std::set<std::pair<int, int>> RAG_adj(cv::Mat s)
 {
     std::set<std::pair<int, int>> adj;
     int current, other;
@@ -223,6 +224,93 @@ PyArrayObject *get_edge_index(cv::Mat s)
                 adj.emplace(edge);
             }
         }
+    return adj;
+}
+
+float spatial_distance(int u, int v, cv::Mat features)
+{
+    float d;
+    int i,j;
+    if(features.cols == FEATURES_GRAYSCALE)
+    {
+        i = GRAY_CENTROID_I;
+        j = GRAY_CENTROID_J;
+    }
+    else 
+    {
+        i = COLOR_CENTROID_I;
+        j = COLOR_CENTROID_J;
+    }
+    d = sqrt(  pow(features.at<double>(u, i) - features.at<double>(v, i), 2) 
+             + pow(features.at<double>(u, j) - features.at<double>(v, j), 2));
+    return d;
+}
+
+float feature_distance(int u, int v, cv::Mat features)
+{
+    float d = 0;
+    for(int f=0; f<features.cols; f++)
+        d += pow(features.at<double>(u, f) - features.at<double>(v, f), 2);
+    return sqrt(d);
+}
+
+std::set<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure d)
+{
+    std::set<std::pair<int, int>> adj;
+    int n = features.rows;
+
+    for(int u = 0; u<n; u++)
+    {
+
+        for(int v = 0; v<n; v++)
+        {
+            
+        }
+    }
+    
+    
+}
+
+PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type)
+{
+    std::set<std::pair<int, int>> adj;
+    switch (graph_type)
+    {
+	RAG:
+        adj = RAG_adj(s);
+		break;
+	KNN_SPATIAL_1:
+		adj = KNN_adj(s, features, 1, SPATIAL);
+		break;
+	KNN_SPATIAL_2:
+		adj = KNN_adj(s, features, 2, SPATIAL);
+		break;
+	KNN_SPATIAL_4:
+		adj = KNN_adj(s, features, 4, SPATIAL);
+		break;
+	KNN_SPATIAL_8:
+		adj = KNN_adj(s, features, 8, SPATIAL);
+		break;
+	KNN_SPATIAL_16:
+		adj = KNN_adj(s, features, 16, SPATIAL);
+		break;
+	KNN_FEATURE_1:
+		adj = KNN_adj(s, features, 1, FEATURE);
+		break;
+	KNN_FEATURE_2:
+		adj = KNN_adj(s, features, 2, FEATURE);
+		break;
+	KNN_FEATURE_4:
+		adj = KNN_adj(s, features, 4, FEATURE);
+		break;
+	KNN_FEATURE_8:
+		adj = KNN_adj(s, features, 8, FEATURE);
+		break;
+	KNN_FEATURE_16:
+		adj = KNN_adj(s, features, 16, FEATURE);
+        break;
+    }
+
     PyArrayObject *edge_index;
     int64_t dims[2];
     dims[0] = 2;
@@ -301,9 +389,11 @@ PyArrayObject *to_numpy_float64(cv::Mat a)
 static PyObject* compute_features_color(PyObject *self, PyObject *args)
 {
     PyArrayObject *img_np;
+    GraphType graph_type;
+    SegmentationMethod seg_method;
     int n_segments;
     float compactness;
-    if(!PyArg_ParseTuple(args, "O!if", &PyArray_Type, &img_np, &n_segments, &compactness))
+    if(!PyArg_ParseTuple(args, "O!iii|f", &PyArray_Type, &img_np, &n_segments, &graph_type, &seg_method, &compactness))
         return NULL;
 
     cv::Mat img = from_numpy(img_np);
@@ -313,7 +403,8 @@ static PyObject* compute_features_color(PyObject *self, PyObject *args)
     if (region_size < 2)
         region_size = 2;
     cv::Mat s;
-    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, cv::ximgproc::SLICO, region_size);
+    int slic_method = seg_method == ADAPTATIVE_SLIC ? cv::ximgproc::SLICO : cv::ximgproc::SLIC; 
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, slic_method, region_size);
     if (slic->getNumberOfSuperpixels() > 1)
     {
         slic->iterate();
@@ -328,30 +419,34 @@ static PyObject* compute_features_color(PyObject *self, PyObject *args)
     if (features_np == NULL)
         return NULL;
 
-    PyArrayObject *edge_index = get_edge_index(s);
+    PyArrayObject *edge_index = get_edge_index(s, graph_type);
     if (edge_index == NULL)
         return NULL;
+    
+    PyArrayObject *segments = to_numpy_int32(s);
+    if(segments == NULL)
+        return NULL;
 
-    return Py_BuildValue("OO", PyArray_Return(features_np), PyArray_Return(edge_index));    
+    return Py_BuildValue("OOO", PyArray_Return(features_np), PyArray_Return(edge_index), PyArray_Return(segments));    
 }
 
 static PyObject* compute_features_gray(PyObject *self, PyObject *args)
 {
     PyArrayObject *img_np;
+    GraphType graph_type;
+    SegmentationMethod seg_method;
     int n_segments;
     float compactness;
-    if(!PyArg_ParseTuple(args, "O!if", &PyArray_Type, &img_np, &n_segments, &compactness))
+    if(!PyArg_ParseTuple(args, "O!iii|f", &PyArray_Type, &img_np, &n_segments, &graph_type, &seg_method, &compactness))
         return NULL;
 
     cv::Mat img = from_numpy(img_np);
-    cv::Mat img_cie_lab;
-    cv::cvtColor(img, img_cie_lab, cv::COLOR_GRAY2RGB);
-    cv::cvtColor(img_cie_lab, img_cie_lab, cv::COLOR_RGB2Lab);
     int region_size = sqrt((img.rows*img.cols)/n_segments);
     if (region_size < 2)
         region_size = 2;
     cv::Mat s;
-    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img_cie_lab, cv::ximgproc::SLICO, region_size);
+    int slic_method = seg_method == ADAPTATIVE_SLIC ? cv::ximgproc::SLICO : cv::ximgproc::SLIC; 
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(img, slic_method, region_size);
     if (slic->getNumberOfSuperpixels() > 1)
     {
         slic->iterate();
@@ -366,11 +461,15 @@ static PyObject* compute_features_gray(PyObject *self, PyObject *args)
     if (features_np == NULL)
         return NULL;
 
-    PyArrayObject *edge_index = get_edge_index(s);
+    PyArrayObject *edge_index = get_edge_index(s, graph_type);
     if (edge_index == NULL)
         return NULL;
 
-    return Py_BuildValue("OO", PyArray_Return(features_np), PyArray_Return(edge_index));    
+    PyArrayObject *segments = to_numpy_int32(s);
+    if(segments == NULL)
+        return NULL;
+
+    return Py_BuildValue("OOO", PyArray_Return(features_np), PyArray_Return(edge_index), PyArray_Return(segments));    
 }
 
 static PyMethodDef compute_features_methods[] = {
