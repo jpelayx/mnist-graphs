@@ -1,7 +1,0 @@
-README.md
-compute_features.cpp
-setup.py
-ComputeFeatures.egg-info/PKG-INFO
-ComputeFeatures.egg-info/SOURCES.txt
-ComputeFeatures.egg-info/dependency_links.txt
-ComputeFeatures.egg-info/top_level.txt
