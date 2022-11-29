@@ -23,29 +23,40 @@ class ColorSLIC(InMemoryDataset):
                     'std_deviation_color',
                     'centroid',
                     'std_deviation_centroid']
-    implemented_features = ['avg_color',
-                            'std_deviation_color',
-                            'avg_color_hsv',
-                            'std_deviation_color_hsv',
-                            'avg_lightness',
-                            'std_deviation_lightness',
-                            'centroid',
-                            'std_deviation_centroid',
-                            'num_pixels']
+    # graph types 
+    graph_types_dict = {'RAG' : 0,
+                        '1NNSpatial' : 1,
+                        '2NNSpatial' : 2,
+                        '4NNSpatial' : 3,
+                        '8NNSpatial' : 4,
+                        '16NNSpatial': 5,
+                        '1NNFeature' : 6,
+                        '2NNFeature' : 7,
+                        '4NNFeature' : 8,
+                        '8NNFeature' : 9,
+                        '16NNFeature': 10 }
+
+    # slic methods
+    slic_methods_dict = {'SLIC0': 0,
+                         'SLIC': 1,
+                         'grid': 2 }
+
     ds_name = 'ColorSLIC'
     def __init__(self, 
                  root=None, 
                  n_segments= 75,  
                  compactness = 0.1, 
                  features = None, 
+                 graph_type = 'RAG',
+                 slic_method = 'SLIC0',
                  train = True,
-                 use_ext = True,
                  pre_select_features = False):
         self.train = train
         self.n_segments = n_segments
         self.compactness = compactness
         self.features = self.std_features if features is None else features
-        self.use_ext = use_ext
+        self.graph_type = graph_type
+        self.slic_method = slic_method
         self.pre_select_features = pre_select_features
 
         if root is None:
@@ -105,7 +116,7 @@ class ColorSLIC(InMemoryDataset):
         self.features_dict[feature] = f
     
     def print_features(self):
-        print('Selected features: ')
+        print('Selected features for ' + self.graph_type + ' graph:')
         for feature in self.features_dict:
             if self.features_dict[feature]:
                 print('\t+ ' + feature)
@@ -124,7 +135,7 @@ class ColorSLIC(InMemoryDataset):
         print(f'Computing features: ')
 
         t = time.time()
-        if self.use_ext and extension_availabe:
+        if extension_availabe:
             if self.pre_select_features:
                 data_list = [self.filter_features(self.create_data_obj_ext(d)) for d in data]
             else:
@@ -143,7 +154,11 @@ class ColorSLIC(InMemoryDataset):
     def create_data_obj_ext(self, d):
             img, y = d
             img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
-            features, edge_index = color_features(img_np, self.n_segments, self.compactness)
+            features, edge_index, _ = color_features(img_np,
+                                                     self.n_segments, 
+                                                     self.graph_types_dict[self.graph_type], 
+                                                     self.slic_methods_dict[self.slic_method], 
+                                                     self.compactness)
             pos = features[:, 6:8]
             return Data(x=torch.from_numpy(features).to(torch.float), edge_index=torch.from_numpy(edge_index).to(torch.long), pos=torch.from_numpy(pos).to(torch.float), y=y)
 

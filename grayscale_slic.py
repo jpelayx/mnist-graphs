@@ -23,15 +23,6 @@ class GrayscaleSLIC(InMemoryDataset):
     # get_ds_name: returns a string with the path to the dataset
     # load_data: ...
     # optionally ds_name for pretty printing 
-    
-    # features
-    GRAY_AVG_COLOR = 0  
-    GRAY_STD_DEV_COLOR = 1  
-    GRAY_CENTROID_I = 2  
-    GRAY_CENTROID_J = 3  
-    GRAY_STD_DEV_CENTROID_I = 4  
-    GRAY_STD_DEV_CENTROID_J = 5  
-    GRAY_NUM_PIXELS = 6  
 
     # graph types 
     graph_types_dict = {'RAG' : 0,
@@ -123,7 +114,7 @@ class GrayscaleSLIC(InMemoryDataset):
         self.features_dict[feature] = f
 
     def print_features(self):
-        print('Selected features: ')
+        print('Selected features for ' + self.graph_type + ' graph:')
         for feature in self.features_dict:
             if self.features_dict[feature]:
                 print('\t+ ' + feature)
