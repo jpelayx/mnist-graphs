@@ -216,7 +216,7 @@ if __name__ == '__main__':
     meta_field_names = ['n_segments', 
                         'compactness', 
                         'graph type', 
-                        'slic method'
+                        'slic method',
                         'features', 
                         'avg. num. of nodes', 
                         'std. dev. of num. of nodes', 
