@@ -295,7 +295,7 @@ if __name__ == '__main__':
                 print(f'Epoch: {res["Epoch"]}, accuracy: {res["Accuracy"]}, loss: {res["Avg loss"]}')
             fold_hist.append(res)
         tf = time.time()
-        print(f"Done in {tf - t0}s.")
+        print(f"Done in {tf - t0}s. Accuracy {fold_hist[-1]['Accuracy']}")
         training_time.append(tf - t0)
         history.append(fold_hist)
 
