@@ -69,11 +69,11 @@ enum SegmentationMethod
 #define FEATURES_COLOR 17
 
 
-PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type);
+PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type, int img_width, int img_height);
 std::vector<std::pair<int, int>> RAG_adj(cv::Mat s);
-std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure distance_measure);
-float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_measure);
-float feature_distance(int u, int v, cv::Mat features);
+std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure distance_measure, int img_width, int img_height);
+float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_measure, int img_width, int img_height);
+float feature_distance(int u, int v, cv::Mat features, int img_width, int img_height);
 float spatial_distance(int u, int v, cv::Mat features);
 
 cv::Mat grayscale_features(cv::Mat s, int n, cv::Mat img);

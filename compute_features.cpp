@@ -228,7 +228,7 @@ std::vector<std::pair<int, int>> RAG_adj(cv::Mat s)
     return adj_vec;
 }
 
-float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_measure)
+float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_measure, int img_width, int img_height)
 {
     if(u == v)
         return 0.0;
@@ -238,7 +238,7 @@ float compute_distance(int u, int v, cv::Mat features, DistanceMeasure distance_
     case SPATIAL:
         return spatial_distance(u, v, features);
     case FEATURE:
-        return feature_distance(u, v, features);
+        return feature_distance(u, v, features, img_width, img_height);
     }
     return 0.0;
 }
@@ -262,15 +262,38 @@ float spatial_distance(int u, int v, cv::Mat features)
     return d;
 }
 
-float feature_distance(int u, int v, cv::Mat features)
+float feature_distance(int u, int v, cv::Mat features, int img_width, int img_height)
 {
-    float d = 0;
-    for(int f=0; f<features.cols; f++)
-        d += pow(features.at<double>(u, f) - features.at<double>(v, f), 2);
-    return sqrt(d);
+    // using normalized avg. color and centroid distance
+    float d;
+    if(features.cols == FEATURES_GRAYSCALE)
+    {
+        int i, j, l;
+        i = GRAY_CENTROID_I;
+        j = GRAY_CENTROID_J;
+        l = GRAY_AVG_COLOR;
+        d =   sqrt((  pow((features.at<double>(u, i) - features.at<double>(v, i))/img_height, 2) 
+                    + pow((features.at<double>(u, j) - features.at<double>(v, j))/img_width, 2))/2.0
+                    + pow(features.at<double>(u, l) - features.at<double>(v, l), 2));
+    }
+    else
+    {
+        int i, j, r, g, b;
+        i = COLOR_CENTROID_I;
+        j = COLOR_CENTROID_J;
+        r = COLOR_AVG_COLOR_R;
+        g = COLOR_AVG_COLOR_G;
+        b = COLOR_AVG_COLOR_B;
+        d =   sqrt(  (pow((features.at<double>(u, i) - features.at<double>(v, i))/img_height, 2) 
+                   +  pow((features.at<double>(u, j) - features.at<double>(v, j))/img_width, 2))/2.0
+                   + (pow(features.at<double>(u, r) - features.at<double>(v, r), 2)
+                   +  pow(features.at<double>(u, g) - features.at<double>(v, g), 2)
+                   +  pow(features.at<double>(u, b) - features.at<double>(v, b), 2))/3.0);
+    }
+    return d;
 }
 
-std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure distance_measure)
+std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, DistanceMeasure distance_measure, int img_width, int img_height)
 {
     std::vector<std::pair<int, int>> adj;
     int n = features.rows;
@@ -281,7 +304,7 @@ std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, Dis
         // initialize distances vector
         for(int v=0; v<n; v++)
         {
-            distances[v].first = compute_distance(u, v, features, distance_measure);
+            distances[v].first = compute_distance(u, v, features, distance_measure, img_width, img_height);
             distances[v].second = v;
         }
         std::sort(distances.begin(), distances.end());
@@ -307,7 +330,7 @@ std::vector<std::pair<int, int>> KNN_adj(cv::Mat s, cv::Mat features, int k, Dis
     return adj;  
 }
 
-PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type)
+PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type, int img_width, int img_height)
 {
     std::vector<std::pair<int, int>> adj;
     switch (graph_type)
@@ -316,34 +339,34 @@ PyArrayObject *get_edge_index(cv::Mat s, cv::Mat features, GraphType graph_type)
         adj = RAG_adj(s);
 		break;
 	case KNN_SPATIAL_1:
-		adj = KNN_adj(s, features, 1, SPATIAL);
+		adj = KNN_adj(s, features, 1, SPATIAL, img_width, img_height);
 		break;
 	case KNN_SPATIAL_2:
-		adj = KNN_adj(s, features, 2, SPATIAL);
+		adj = KNN_adj(s, features, 2, SPATIAL, img_width, img_height);
 		break;
 	case KNN_SPATIAL_4:
-		adj = KNN_adj(s, features, 4, SPATIAL);
+		adj = KNN_adj(s, features, 4, SPATIAL, img_width, img_height);
 		break;
 	case KNN_SPATIAL_8:
-		adj = KNN_adj(s, features, 8, SPATIAL);
+		adj = KNN_adj(s, features, 8, SPATIAL, img_width, img_height);
 		break;
 	case KNN_SPATIAL_16:
-		adj = KNN_adj(s, features, 16, SPATIAL);
+		adj = KNN_adj(s, features, 16, SPATIAL, img_width, img_height);
 		break;
 	case KNN_FEATURE_1:
-		adj = KNN_adj(s, features, 1, FEATURE);
+		adj = KNN_adj(s, features, 1, FEATURE, img_width, img_height);
 		break;
 	case KNN_FEATURE_2:
-		adj = KNN_adj(s, features, 2, FEATURE);
+		adj = KNN_adj(s, features, 2, FEATURE, img_width, img_height);
 		break;
 	case KNN_FEATURE_4:
-		adj = KNN_adj(s, features, 4, FEATURE);
+		adj = KNN_adj(s, features, 4, FEATURE, img_width, img_height);
 		break;
 	case KNN_FEATURE_8:
-		adj = KNN_adj(s, features, 8, FEATURE);
+		adj = KNN_adj(s, features, 8, FEATURE, img_width, img_height);
 		break;
 	case KNN_FEATURE_16:
-		adj = KNN_adj(s, features, 16, FEATURE);
+		adj = KNN_adj(s, features, 16, FEATURE, img_width, img_height);
         break;
     }
 
@@ -455,7 +478,7 @@ static PyObject* compute_features_color(PyObject *self, PyObject *args)
     if (features_np == NULL)
         return NULL;
 
-    PyArrayObject *edge_index = get_edge_index(s, features, graph_type);
+    PyArrayObject *edge_index = get_edge_index(s, features, graph_type, img.cols, img.rows);
     if (edge_index == NULL)
         return NULL;
     
@@ -497,7 +520,7 @@ static PyObject* compute_features_gray(PyObject *self, PyObject *args)
     if (features_np == NULL)
         return NULL;
 
-    PyArrayObject *edge_index = get_edge_index(s, features, graph_type);
+    PyArrayObject *edge_index = get_edge_index(s, features, graph_type, img.cols, img.rows);
     if (edge_index == NULL)
         return NULL;
 
