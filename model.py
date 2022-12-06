@@ -18,6 +18,7 @@ import cifar10_slic
 import cifar100_slic
 import stl10_slic
 import stanfordcars_slic
+import geo_ds_slic
 
 class GCN(torch.nn.Module):
     def __init__(self, data):
@@ -175,6 +176,17 @@ def load_dataset(n_segments, compactness, features, graph_type, slic_method, dat
                                                        slic_method=slic_method,
                                                        train=True,
                                                        pre_select_features=pre_select_features)
+    elif dataset == 'geo_ds':
+        ds = geo_ds_slic.SuperPixelGraphGeo(root=None,
+                                            n_segments=n_segments,
+                                            compactness=compactness,
+                                            features=features,
+                                            graph_type=graph_type,
+                                            slic_method=slic_method,
+                                            pre_select_features=pre_select_features)
+        targets = ds.get_targets()
+        splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
+        return ds, splits, labels
     else:
         print('No dataset called: \"' + dataset + '\" available.')
         
