@@ -177,7 +177,8 @@ def load_dataset(n_segments, compactness, features, graph_type, slic_method, dat
                                                        train=True,
                                                        pre_select_features=pre_select_features)
     elif dataset == 'geo_ds':
-        ds = geo_ds_slic.SuperPixelGraphGeo(root=None,
+        ds = geo_ds_slic.SuperPixelGraphGeo('/home/julia/Documents/ds',
+                                            root=None,
                                             n_segments=n_segments,
                                             compactness=compactness,
                                             features=features,
