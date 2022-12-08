@@ -189,6 +189,7 @@ def load_dataset(n_segments, compactness, features, graph_type, slic_method, dat
         return ds, splits, labels
     else:
         print('No dataset called: \"' + dataset + '\" available.')
+        return None
         
     labels = test_ds.get_labels()
     ds = ConcatDataset([train_ds, test_ds])
@@ -252,30 +253,49 @@ if __name__ == '__main__':
                                       args.slic_method,
                                       args.dataset,
                                       args.pre_select_features)
-    out = './{}/n{}-{}-{}-{}.csv'.format(args.dataset,
-                                        ds.datasets[0].n_segments,
-                                        args.graph_type,
-                                        args.slic_method if args.slic_method == 'SLIC0' else args.slic_method + 'c' + str(args.compactness),
-                                        '-'.join(ds.datasets[0].features))
-    meta_out = './{}/training_info.csv'.format(args.dataset)
-
     meta_info = {}
+    try:
+        train_ds, test_ds = ds.datasets[0], ds.datasets[1]
+        meta_info['loading time'] = train_ds.loading_time
+        meta_info['avg. num. of nodes'] = train_ds.avg_num_nodes
+        meta_info['std. dev. of num. of nodes'] = train_ds.std_deviation_num_nodes
+        meta_info['avg. num. of edges'] = train_ds.avg_num_edges
+        meta_info['std. dev. of num. of edges'] = train_ds.std_deviation_num_edges
+        meta_info['n_segments']  = train_ds.n_segments
+        meta_info['compactness'] = train_ds.compactness
+        meta_info['graph type'] =  train_ds.graph_type
+        meta_info['slic method'] = train_ds.slic_method
+        meta_info['features'] = ' '.join(train_ds.features)
+        
+        out = './{}/n{}-{}-{}-{}.csv'.format(args.dataset,
+                                             train_ds.n_segments,
+                                             train_ds.graph_type,
+                                             train_ds.slic_method if train_ds.slic_method == 'SLIC0' else train_ds.slic_method + 'c' + str(train_ds.compactness),
+                                             '-'.join(train_ds.features))
+    except:
+        meta_info['loading time'] = ds.loading_time
+        meta_info['avg. num. of nodes'] = ds.avg_num_nodes
+        meta_info['std. dev. of num. of nodes'] = ds.std_deviation_num_nodes
+        meta_info['avg. num. of edges'] = ds.avg_num_edges
+        meta_info['std. dev. of num. of edges'] = ds.std_deviation_num_edges
+        meta_info['n_segments']  = ds.n_segments
+        meta_info['compactness'] = ds.compactness
+        meta_info['graph type'] =  ds.graph_type
+        meta_info['slic method'] = ds.slic_method
+        meta_info['features'] = ' '.join(ds.features)
+        
+        out = './{}/n{}-{}-{}-{}.csv'.format(args.dataset,
+                                             ds.n_segments,
+                                             ds.graph_type,
+                                             ds.slic_method if ds.slic_method == 'SLIC0' else ds.slic_method + 'c' + str(ds.compactness),
+                                             '-'.join(ds.features))
 
+
+    meta_out = './{}/training_info.csv'.format(args.dataset)
     with open(out, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
         writer.writeheader()
 
-    train_ds, test_ds = ds.datasets[0], ds.datasets[1]
-    meta_info['loading time'] = train_ds.loading_time
-    meta_info['avg. num. of nodes'] = train_ds.avg_num_nodes
-    meta_info['std. dev. of num. of nodes'] = train_ds.std_deviation_num_nodes
-    meta_info['avg. num. of edges'] = train_ds.avg_num_edges
-    meta_info['std. dev. of num. of edges'] = train_ds.std_deviation_num_edges
-    meta_info['n_segments']  = train_ds.n_segments
-    meta_info['compactness'] = train_ds.compactness
-    meta_info['graph type'] = args.graph_type
-    meta_info['slic method'] = args.slic_method
-    meta_info['features'] = ' '.join(train_ds.features)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
