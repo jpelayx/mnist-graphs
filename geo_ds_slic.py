@@ -122,6 +122,7 @@ class SuperPixelGraphGeo(Dataset):
         self.std_deviation_num_nodes = None
         self.avg_num_edges = None
         self.std_deviation_num_edges = None
+        self.loading_time = None
 
         transform = None if self.pre_select_features else self.filter_features
         super().__init__(self.root, transform=transform)
@@ -224,7 +225,7 @@ class SuperPixelGraphGeo(Dataset):
         img_pil = Image.open(full_path) 
         if img_pil.mode != 'RGB':
             img_pil = img_pil.convert('RGB')
-        img_np = np.asarray(img_pil, dtype=np.uint8)
+        img_np = np.asarray(img_pil, dtype=np.float32)/255.0
         return img_np
 
     @property
@@ -242,16 +243,19 @@ class SuperPixelGraphGeo(Dataset):
         num_nodes = np.ndarray((self.len(), 1), dtype=np.int32)
         num_edges = np.ndarray((self.len(), 1), dtype=np.int32)
         idx = 0
+        t = time.time()
         for raw_path in self.raw_paths:
             data = self.create_data_obj_ext(idx, raw_path)
             torch.save(data, self.root + '/processed' + f'/data_{idx}.pt')
             num_nodes[idx] = data.num_nodes
             num_edges[idx] = data.num_edges
             idx += 1
+        self.loading_time = time.time() - t
         self.avg_num_nodes = np.mean(num_nodes)
         self.std_deviation_num_nodes = np.std(num_nodes)
         self.avg_num_edges = np.mean(num_edges)
         self.std_deviation_num_edges = np.std(num_edges)
+        
 
     def get(self, idx):
         data = torch.load(self.root + '/processed' + f'/data_{idx}.pt')

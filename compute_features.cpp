@@ -467,7 +467,7 @@ static PyObject* compute_features_color(PyObject *self, PyObject *args)
     if (slic->getNumberOfSuperpixels() > 1)
     {
         slic->iterate();
-        slic->enforceLabelConnectivity(50);
+        slic->enforceLabelConnectivity(25);
     }
     slic->getLabels(s);
     int n = slic->getNumberOfSuperpixels();

@@ -187,6 +187,7 @@ def load_dataset(n_segments, compactness, features, graph_type, slic_method, dat
                                             pre_select_features=pre_select_features)
         targets = ds.get_targets()
         splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
+        labels = ds.get_labels()
         return ds, splits, labels
     else:
         print('No dataset called: \"' + dataset + '\" available.')
@@ -257,40 +258,24 @@ if __name__ == '__main__':
     meta_info = {}
     try:
         train_ds, test_ds = ds.datasets[0], ds.datasets[1]
-        meta_info['loading time'] = train_ds.loading_time
-        meta_info['avg. num. of nodes'] = train_ds.avg_num_nodes
-        meta_info['std. dev. of num. of nodes'] = train_ds.std_deviation_num_nodes
-        meta_info['avg. num. of edges'] = train_ds.avg_num_edges
-        meta_info['std. dev. of num. of edges'] = train_ds.std_deviation_num_edges
-        meta_info['n_segments']  = train_ds.n_segments
-        meta_info['compactness'] = train_ds.compactness
-        meta_info['graph type'] =  train_ds.graph_type
-        meta_info['slic method'] = train_ds.slic_method
-        meta_info['features'] = ' '.join(train_ds.features)
-        
-        out = './{}/n{}-{}-{}-{}.csv'.format(args.dataset,
-                                             train_ds.n_segments,
-                                             train_ds.graph_type,
-                                             train_ds.slic_method if train_ds.slic_method == 'SLIC0' else train_ds.slic_method + 'c' + str(train_ds.compactness),
-                                             '-'.join(train_ds.features))
     except:
-        meta_info['loading time'] = ds.loading_time
-        meta_info['avg. num. of nodes'] = ds.avg_num_nodes
-        meta_info['std. dev. of num. of nodes'] = ds.std_deviation_num_nodes
-        meta_info['avg. num. of edges'] = ds.avg_num_edges
-        meta_info['std. dev. of num. of edges'] = ds.std_deviation_num_edges
-        meta_info['n_segments']  = ds.n_segments
-        meta_info['compactness'] = ds.compactness
-        meta_info['graph type'] =  ds.graph_type
-        meta_info['slic method'] = ds.slic_method
-        meta_info['features'] = ' '.join(ds.features)
-        
-        out = './{}/n{}-{}-{}-{}.csv'.format(args.dataset,
-                                             ds.n_segments,
-                                             ds.graph_type,
-                                             ds.slic_method if ds.slic_method == 'SLIC0' else ds.slic_method + 'c' + str(ds.compactness),
-                                             '-'.join(ds.features))
-
+        train_ds = ds
+    meta_info['loading time'] = train_ds.loading_time
+    meta_info['avg. num. of nodes'] = train_ds.avg_num_nodes
+    meta_info['std. dev. of num. of nodes'] = train_ds.std_deviation_num_nodes
+    meta_info['avg. num. of edges'] = train_ds.avg_num_edges
+    meta_info['std. dev. of num. of edges'] = train_ds.std_deviation_num_edges
+    meta_info['n_segments']  = train_ds.n_segments
+    meta_info['compactness'] = train_ds.compactness
+    meta_info['graph type'] =  train_ds.graph_type
+    meta_info['slic method'] = train_ds.slic_method
+    meta_info['features'] = ' '.join(train_ds.features)
+    
+    out = './{}/n{}-{}-{}-{}.csv'.format(args.dataset,
+                                            train_ds.n_segments,
+                                            train_ds.graph_type,
+                                            train_ds.slic_method if train_ds.slic_method == 'SLIC0' else train_ds.slic_method + 'c' + str(train_ds.compactness),
+                                            '-'.join(train_ds.features))
 
     meta_out = './{}/training_info.csv'.format(args.dataset)
     with open(out, 'w', newline='') as csvfile:
