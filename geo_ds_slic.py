@@ -136,13 +136,13 @@ class SuperPixelGraphGeo(Dataset):
             self.features.sort()
             name = './geo_ds/n{}-c{}-{}'.format(self.n_segments, 
                                                 self.graph_type,
-                                                self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + self.compactness,
+                                                self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness),
                                                 '-'.join(self.features))
         
         else:
             name = './geo_ds/n{}-{}-{}'.format(self.n_segments, 
                                             self.graph_type,
-                                            self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + self.compactness)
+                                            self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness))
         print(name)
         return name
 
