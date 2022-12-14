@@ -20,6 +20,7 @@ import stl10_slic
 import stanfordcars_slic
 import geo_ds_slic
 
+
 class GCN(torch.nn.Module):
     def __init__(self, data):
         super(GCN, self).__init__()

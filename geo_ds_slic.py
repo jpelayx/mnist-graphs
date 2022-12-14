@@ -24,6 +24,9 @@ from PIL import PngImagePlugin
 LARGE_ENOUGH_NUMBER = 100000
 PngImagePlugin.MAX_TEXT_CHUNK = LARGE_ENOUGH_NUMBER * (1024**2)
 
+from guppy import hpy 
+hp = hpy()
+
 class SuperPixelGraphGeo(Dataset):
     ds_name = 'GeoSLIC'
     num_classes = 45
@@ -162,7 +165,7 @@ class SuperPixelGraphGeo(Dataset):
                 path = re.search('.*/images/by\-hash(.*)', path).group(1)
                 self.raw_path_list.append(path)
                 self.processed_path_list.append(f'data_{idx}.pt')
-            idx += 1
+                idx += 1
         self.targets = torch.from_numpy(self.targets)
 
     def get_labels(self):
@@ -245,8 +248,11 @@ class SuperPixelGraphGeo(Dataset):
         idx = 0
         t = time.time()
         for raw_path in self.raw_paths:
-            data = self.create_data_obj_ext(idx, raw_path)
-            torch.save(data, self.root + '/processed' + f'/data_{idx}.pt')
+            if not osp.exists(osp.join(self.root, 'processed', f'data_{idx}.pt')):
+                data = self.create_data_obj_ext(idx, raw_path)
+                torch.save(data, osp.join(self.root, 'processed', f'data_{idx}.pt'))
+            else:
+                data = self.get(idx)
             num_nodes[idx] = data.num_nodes
             num_edges[idx] = data.num_edges
             idx += 1

@@ -396,14 +396,14 @@ cv::Mat from_numpy(PyArrayObject *a)
     cv::Mat img;
     if(ndims == 2)
     {
-        img.create(rows, cols, CV_32F);
+        img = cv::Mat(rows, cols, CV_32F);
         for(int i=0; i<rows; i++)
             for(int j=0; j<cols; j++)
                 img.at<float>(i, j) = *(float *)PyArray_GETPTR2(a, i, j) * 255;
     }
     else  // ndims == 3
     {
-        img.create(rows, cols, CV_32FC3);
+        img = cv::Mat(rows, cols, CV_32FC3);
         for(int i=0; i<rows; i++)
             for(int j=0; j<cols; j++)
             {
