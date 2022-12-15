@@ -47,7 +47,10 @@ def train(dataloader, model, loss_fn, optimizer, device):
     for _, b in enumerate(dataloader):
         b.to(device)
         pred = model(b.x, b.edge_index, b.batch)
-        loss = loss_fn(pred, b.y)
+        y = b.y
+        if type(y) != torch.Tensor:
+            y = torch.tensor([y])
+        loss = loss_fn(pred, y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -62,7 +65,10 @@ def test(dataloader, model, loss_fn, device, labels):
             d.to(device)
             pred = model(d.x, d.edge_index, d.batch)
             test_loss += loss_fn(pred, d.y).item()
-            Y = torch.cat([Y, d.y.to('cpu')])
+            y = d.y
+            if type(y) != torch.Tensor:
+                y = torch.tensor([y])
+            Y = torch.cat([Y, y.to('cpu')])
             Y_pred = torch.cat([Y_pred, pred.to('cpu')])
     test_loss /= num_batches
     Y_pred = torch.argmax(Y_pred, dim=1)
