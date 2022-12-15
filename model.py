@@ -45,15 +45,12 @@ class GCN(torch.nn.Module):
 
 def train(dataloader, model, loss_fn, optimizer, device):
     for _, b in enumerate(dataloader):
+        if type(b.y) != torch.Tensor:
+            b.y = torch.tensor([b.y])
+        b.y = b.y.type(torch.LongTensor)
         b.to(device)
         pred = model(b.x, b.edge_index, b.batch)
-        print(pred, type(pred))
-        y = b.y
-        if type(y) != torch.Tensor:
-            y = torch.tensor([y])
-        y = y.type(torch.LongTensor)
-        print(y, type(y), y.dtype)
-        loss = loss_fn(pred, y)
+        loss = loss_fn(pred, b.y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -65,6 +62,9 @@ def test(dataloader, model, loss_fn, device, labels):
     Y, Y_pred = torch.empty(0), torch.empty(0)
     with torch.no_grad():
         for d in dataloader:
+            if type(d.y) != torch.Tensor:
+                d.y = torch.tensor([d.y])
+            d.y = d.y.type(torch.LongTensor)
             d.to(device)
             pred = model(d.x, d.edge_index, d.batch)
             test_loss += loss_fn(pred, d.y).item()
