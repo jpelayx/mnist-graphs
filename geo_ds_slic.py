@@ -209,7 +209,7 @@ class SuperPixelGraphGeo(Dataset):
         return data
 
     def create_data_obj_ext(self, idx, path):
-        y = torch.tensor([self.targets[idx]])
+        y = torch.tensor([self.targets[idx]], dtype=torch.int64)
         img_np = self.load_img(path)
         features, edge_index, _ = color_features(img_np,
                                                     self.n_segments, 
