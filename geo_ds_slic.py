@@ -24,9 +24,6 @@ from PIL import PngImagePlugin
 LARGE_ENOUGH_NUMBER = 100000
 PngImagePlugin.MAX_TEXT_CHUNK = LARGE_ENOUGH_NUMBER * (1024**2)
 
-from guppy import hpy 
-hp = hpy()
-
 class SuperPixelGraphGeo(Dataset):
     ds_name = 'GeoSLIC'
     num_classes = 45
@@ -212,7 +209,7 @@ class SuperPixelGraphGeo(Dataset):
         return data
 
     def create_data_obj_ext(self, idx, path):
-        y = self.targets[idx]
+        y = torch.tensor([self.targets[idx]])
         img_np = self.load_img(path)
         features, edge_index, _ = color_features(img_np,
                                                     self.n_segments, 
