@@ -150,7 +150,7 @@ class SuperPixelGraphGeo(Dataset):
     
     def load_index_info(self):
         index_path = self.ds_path + '/labels/v14-one-tree-test.csv'
-        self.targets = np.ndarray((self.len(), 1), dtype=np.int32)
+        self.targets = np.ndarray((self.len(), 1), dtype=np.int64)
         self.raw_path_list = []
         self.processed_path_list = []
         with open(index_path, newline='') as index_file:

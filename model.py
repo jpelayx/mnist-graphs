@@ -47,9 +47,12 @@ def train(dataloader, model, loss_fn, optimizer, device):
     for _, b in enumerate(dataloader):
         b.to(device)
         pred = model(b.x, b.edge_index, b.batch)
+        print(pred, type(pred))
         y = b.y
         if type(y) != torch.Tensor:
             y = torch.tensor([y])
+        y = y.type(torch.LongTensor)
+        print(y, type(y), y.dtype)
         loss = loss_fn(pred, y)
 
         optimizer.zero_grad()
@@ -68,6 +71,7 @@ def test(dataloader, model, loss_fn, device, labels):
             y = d.y
             if type(y) != torch.Tensor:
                 y = torch.tensor([y])
+            y = y.type(torch.LongTensor)
             Y = torch.cat([Y, y.to('cpu')])
             Y_pred = torch.cat([Y_pred, pred.to('cpu')])
     test_loss /= num_batches
