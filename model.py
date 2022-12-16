@@ -77,12 +77,20 @@ def test(dataloader, model, loss_fn, device, labels):
     test_loss /= num_batches
     Y_pred = torch.argmax(Y_pred, dim=1)
     accuracy = accuracy_score(Y, Y_pred)
-    precision = precision_score(Y, Y_pred)
-    recall = recall_score(Y, Y_pred)
+    precision_micro = precision_score(Y, Y_pred, average='micro', labels=labels, zero_division=0)
+    precision_macro = precision_score(Y, Y_pred, average='macro', labels=labels, zero_division=0)
+    precision_weighted = precision_score(Y, Y_pred, average='weighted', labels=labels, zero_division=0)
+    recall_micro = recall_score(Y, Y_pred, average='micro', labels=labels, zero_division=0)
+    recall_macro = recall_score(Y, Y_pred, average='macro', labels=labels, zero_division=0)
+    recall_weighted = recall_score(Y, Y_pred, average='weighted', labels=labels, zero_division=0)
     f1_micro = f1_score(Y, Y_pred, average='micro', labels=labels)
     f1_macro = f1_score(Y, Y_pred, average='macro', labels=labels)
     f1_weighted = f1_score(Y, Y_pred, average='weighted', labels=labels)
-    return {"Accuracy": accuracy, "Precision": precision, "Recall": recall, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weighted)": f1_weighted, "Avg loss": test_loss}
+    return {"Accuracy": accuracy, 
+            "Precision (micro)": precision_micro, "Precision (macro)": precision_macro, "Precision (weighted)": precision_weighted,
+            "Recall (micro)": recall_micro, "Recall (macro)": recall_macro, "Recall (weighted)": recall_weighted,
+            "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weighted)": f1_weighted,
+            "Avg loss": test_loss}
 
 
 def load_dataset(n_segments, compactness, features, graph_type, slic_method, dataset, pre_select_features):
@@ -250,8 +258,12 @@ if __name__ == '__main__':
                         'avg. num. of edges', 
                         'std. dev. of num. of edges', 
                         'accuracy', 
-                        'precision',
-                        'recall',
+                        'precision micro',
+                        'precision macro',
+                        'precision weighted',
+                        'recall micro',
+                        'recall macro',
+                        'recall weighted',
                         'micro', 
                         'macro',
                         'weighted', 
@@ -342,8 +354,12 @@ if __name__ == '__main__':
 
     meta_info['training time'] = np.average(training_time)
     meta_info['accuracy'] = avg_res['Accuracy']
-    meta_info['precision'] = avg_res['Precision']
-    meta_info['recall'] = avg_res['Recall']
+    meta_info['precision micro'] = avg_res['Precision (micro)']
+    meta_info['precision macro'] = avg_res['Precision (macro)']
+    meta_info['precision weighted'] = avg_res['Precision (weighted)']
+    meta_info['recall micro'] = avg_res['Recall (micro)']
+    meta_info['recall macro'] = avg_res['Recall (macro)']
+    meta_info['recall weighted'] = avg_res['Recall (weighted)']
     meta_info['micro'] = avg_res['F-measure (micro)']
     meta_info['macro'] = avg_res['F-measure (macro)']
     meta_info['weighted'] = avg_res['F-measure (weighted)']
