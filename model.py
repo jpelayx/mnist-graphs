@@ -247,7 +247,12 @@ if __name__ == '__main__':
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
-    field_names = ["Epoch", "Accuracy", "Precision", "Recall", "F-measure (micro)", "F-measure (macro)", "F-measure (weighted)", "Avg loss"]
+    field_names = ["Epoch", 
+                   "Accuracy", 
+                   "Precision (micro)", "Precision (macro)", "Precision (weighted)", 
+                   "Recall (micro)", "Recall (macro)", "Recall (weighted)", 
+                   "F-measure (micro)", "F-measure (macro)", "F-measure (weighted)", 
+                   "Avg loss"]
     meta_field_names = ['n_segments', 
                         'compactness', 
                         'graph type', 
