@@ -5,7 +5,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as T
 import numpy as np
 from torch_geometric.loader import DataLoader
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
 import torch.nn as nn
 import torch.nn.functional as F
@@ -77,10 +77,12 @@ def test(dataloader, model, loss_fn, device, labels):
     test_loss /= num_batches
     Y_pred = torch.argmax(Y_pred, dim=1)
     accuracy = accuracy_score(Y, Y_pred)
+    precision = precision_score(Y, Y_pred)
+    recall = recall_score(Y, Y_pred)
     f1_micro = f1_score(Y, Y_pred, average='micro', labels=labels)
     f1_macro = f1_score(Y, Y_pred, average='macro', labels=labels)
     f1_weighted = f1_score(Y, Y_pred, average='weighted', labels=labels)
-    return {"Accuracy": accuracy, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weighted)": f1_weighted, "Avg loss": test_loss}
+    return {"Accuracy": accuracy, "Precision": precision, "Recall": recall, "F-measure (micro)": f1_micro, "F-measure (macro)": f1_macro, "F-measure (weighted)": f1_weighted, "Avg loss": test_loss}
 
 
 def load_dataset(n_segments, compactness, features, graph_type, slic_method, dataset, pre_select_features):
@@ -237,7 +239,7 @@ if __name__ == '__main__':
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
-    field_names = ["Epoch", "Accuracy", "F-measure (micro)", "F-measure (macro)", "F-measure (weighted)", "Avg loss"]
+    field_names = ["Epoch", "Accuracy", "Precision", "Recall", "F-measure (micro)", "F-measure (macro)", "F-measure (weighted)", "Avg loss"]
     meta_field_names = ['n_segments', 
                         'compactness', 
                         'graph type', 
@@ -248,6 +250,8 @@ if __name__ == '__main__':
                         'avg. num. of edges', 
                         'std. dev. of num. of edges', 
                         'accuracy', 
+                        'precision',
+                        'recall',
                         'micro', 
                         'macro',
                         'weighted', 
@@ -338,6 +342,8 @@ if __name__ == '__main__':
 
     meta_info['training time'] = np.average(training_time)
     meta_info['accuracy'] = avg_res['Accuracy']
+    meta_info['precision'] = avg_res['Precision']
+    meta_info['recall'] = avg_res['Recall']
     meta_info['micro'] = avg_res['F-measure (micro)']
     meta_info['macro'] = avg_res['F-measure (macro)']
     meta_info['weighted'] = avg_res['F-measure (weighted)']
