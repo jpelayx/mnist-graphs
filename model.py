@@ -224,6 +224,7 @@ if __name__ == '__main__':
     import argparse
     import csv
     import time
+    import os.path as osp
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_segments", type=int, default=75,
@@ -369,6 +370,12 @@ if __name__ == '__main__':
     meta_info['macro'] = avg_res['F-measure (macro)']
     meta_info['weighted'] = avg_res['F-measure (weighted)']
     meta_info['avg. loss'] = avg_res['Avg loss']
+    
+    if not osp.exists(meta_out):
+        with open(meta_out, 'a', newline='') as infofile:
+            writer = csv.DictWriter(infofile, fieldnames=meta_field_names)
+            writer.writeheader(infofile, field_names=meta_field_names)
+        
     with open(meta_out, 'a', newline='') as infofile:
         writer = csv.DictWriter(infofile, fieldnames=meta_field_names)
         writer.writerow(meta_info)
