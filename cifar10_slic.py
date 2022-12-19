@@ -10,13 +10,13 @@ class SuperPixelGraphCIFAR10(ColorSLIC):
         return  './cifar10/{}-n{}-{}-{}'.format('train' if self.train else 'test', 
                                               self.n_segments, 
                                               self.graph_type,
-                                              self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + self.compactness)
+                                              self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness))
     def get_ds_name_with_features(self):
         self.features.sort()
-        return  './cifar10/{}-n{}-c{}-{}'.format('train' if self.train else 'test', 
+        return  './cifar10/{}-n{}-c{}-{}-{}'.format('train' if self.train else 'test', 
                                                  self.n_segments, 
                                                  self.graph_type,
-                                                 self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + self.compactness,
+                                                 self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness),
                                                  '-'.join(self.features))
     def get_labels(self):
         return list(range(10))
