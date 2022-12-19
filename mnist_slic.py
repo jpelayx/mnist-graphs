@@ -10,7 +10,7 @@ class SuperPixelGraphMNIST(GrayscaleSLIC):
         return  './mnist/{}-n{}-{}-{}'.format('train' if self.train else 'test', 
                                             self.n_segments, 
                                             self.graph_type,
-                                            self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + self.compactness)
+                                            self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness))
     def get_labels(self):
         return list(range(10))
     def load_data(self):

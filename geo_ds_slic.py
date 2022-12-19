@@ -118,27 +118,27 @@ class SuperPixelGraphGeo(Dataset):
 
         self.load_index_info()
 
-        self.avg_num_nodes = None
-        self.std_deviation_num_nodes = None
-        self.avg_num_edges = None
-        self.std_deviation_num_edges = None
+        self.__avg_num_nodes = None
+        self.__std_deviation_num_nodes = None
+        self.__avg_num_edges = None
+        self.__std_deviation_num_edges = None
         self.loading_time = None
 
         transform = None if self.pre_select_features else self.filter_features
         super().__init__(self.root, transform=transform)
 
         print(self.ds_name + " Loaded.")
-        print(f"Average number of nodes: {self.avg_num_nodes} with standard deviation {self.std_deviation_num_nodes}")
-        print(f"Average number of edges: {self.avg_num_edges} with standard deviation {self.std_deviation_num_edges}")
+        print(f"Average number of nodes: {self.__avg_num_nodes} with standard deviation {self.__std_deviation_num_nodes}")
+        print(f"Average number of edges: {self.__avg_num_edges} with standard deviation {self.__std_deviation_num_edges}")
 
     def get_ds_name(self):
         
         if self.pre_select_features:
             self.features.sort()
-            name = './geo_ds/n{}-c{}-{}'.format(self.n_segments, 
-                                                self.graph_type,
-                                                self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness),
-                                                '-'.join(self.features))
+            name = './geo_ds/n{}-c{}-{}-{}'.format(self.n_segments, 
+                                                   self.graph_type,
+                                                   self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness),
+                                                   '-'.join(self.features))
         
         else:
             name = './geo_ds/n{}-{}-{}'.format(self.n_segments, 
@@ -147,7 +147,6 @@ class SuperPixelGraphGeo(Dataset):
         print(name)
         return name
 
-    
     def load_index_info(self):
         index_path = self.ds_path + '/labels/v14-one-tree-test.csv'
         self.targets = np.ndarray((self.len(), 1), dtype=np.int64)
@@ -164,6 +163,41 @@ class SuperPixelGraphGeo(Dataset):
                 self.processed_path_list.append(f'data_{idx}.pt')
                 idx += 1
         self.targets = torch.from_numpy(self.targets)
+
+    def compute_stats(self):
+        nodes = np.ndarray((self.len(), 1), dtype=np.int32)
+        edges = np.ndarray((self.len(), 1), dtype=np.int32)
+        for idx, g in enumerate(self):
+            nodes[idx] = g.num_nodes
+            edges[idx] = g.num_edges
+        self.__avg_num_nodes = np.average(nodes)
+        self.__std_deviation_num_nodes = np.std(nodes)
+        self.__avg_num_edges = np.average(edges)
+        self.__std_deviation_num_edges = np.std(edges)
+    
+    @property
+    def avg_num_nodes(self):
+        if self.__avg_num_nodes is None:
+            self.compute_stats()
+        return self.__avg_num_nodes
+    
+    @property
+    def std_deviation_num_nodes(self):
+        if self.__std_deviation_num_nodes is None:
+            self.compute_stats()
+        return self.__std_deviation_num_nodes
+    
+    @property
+    def avg_num_edges(self):
+        if self.__avg_num_edges is None:
+            self.compute_stats()
+        return self.__avg_num_edges
+    
+    @property
+    def std_deviation_num_edges(self):
+        if self.__std_deviation_num_edges is None:
+            self.compute_stats()
+        return self.__std_deviation_num_edges
 
     def get_labels(self):
         return list(range(self.num_classes))
@@ -254,10 +288,10 @@ class SuperPixelGraphGeo(Dataset):
             num_edges[idx] = data.num_edges
             idx += 1
         self.loading_time = time.time() - t
-        self.avg_num_nodes = np.mean(num_nodes)
-        self.std_deviation_num_nodes = np.std(num_nodes)
-        self.avg_num_edges = np.mean(num_edges)
-        self.std_deviation_num_edges = np.std(num_edges)
+        self.__avg_num_nodes = np.mean(num_nodes)
+        self.__std_deviation_num_nodes = np.std(num_nodes)
+        self.__avg_num_edges = np.mean(num_edges)
+        self.__std_deviation_num_edges = np.std(num_edges)
         
 
     def get(self, idx):

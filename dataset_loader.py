@@ -6,11 +6,23 @@ import stl10_slic
 import stanfordcars_slic
 import geo_ds_slic
  
+import numpy as np
 import torch
 from torch.utils.data import ConcatDataset
+from sklearn.model_selection import StratifiedKFold
+
+import argparse
 
 
-def load_dataset(n_segments, compactness, features, graph_type, slic_method, dataset, pre_select_features):
+def load_dataset(n_splits, n_segments, compactness, features, graph_type, slic_method, dataset, pre_select_features):
+    """
+    loads dataset with specified parameters and returns:
+
+    + dataset: torch's ConcatDataset with 1 or 2 datasets
+    + splits: as returned by sklearn's StratifiedKFold split
+    + labels: int list with dataset's labels 
+    """
+    ds = None
     if dataset == 'mnist':
         test_ds  = mnist_slic.SuperPixelGraphMNIST(root=None, 
                                                    n_segments=n_segments,
@@ -122,18 +134,23 @@ def load_dataset(n_segments, compactness, features, graph_type, slic_method, dat
                                             graph_type=graph_type,
                                             slic_method=slic_method,
                                             pre_select_features=pre_select_features)
-        return ds
     else:
         print('No dataset called: \"' + dataset + '\" available.')
         return None
-        
-    ds = ConcatDataset([train_ds, test_ds])
-    return ds
+    if ds is None: 
+        labels = train_ds.get_labels()
+        targets = torch.cat([train_ds.get_targets(), test_ds.get_targets()])
+        ds = ConcatDataset([train_ds, test_ds])
+    else:
+        labels = ds.get_labels()
+        targets = ds.get_targets()
+        ds = ConcatDataset([ds])
+    splits = StratifiedKFold(n_splits=n_splits).split(np.zeros(len(targets)), targets)
+    return ds, splits, labels
 
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser()
+def set_dataset_arguments(parser):
+    parser.add_argument("--n_splits", type=int, default=5,
+                        help="number of splits in StratifiedKFold cross validation")
     parser.add_argument("--n_segments", type=int, default=75,
                         help="aproximate number of graph nodes. (default: 75)")
     parser.add_argument("--compactness", type=float, default=0.1,
@@ -148,17 +165,37 @@ if __name__ == '__main__':
                         help="dataset to train against")
     parser.add_argument("--pre_select_features", action='store_true',
                         help="only save selected features when loading dataset")
-    args = parser.parse_args()
 
+    return parser
+
+def get_dataset_params(args):
+    ds_params = {}
+    ds_params['n_splits'] = args.n_splits
+    ds_params['n_segments'] = args.n_segments
+    ds_params['compactness'] = args.compactness
+    ds_params['graph_type'] = args.graph_type
+    ds_params['slic_method'] = args.slic_method
+    ds_params['dataset'] = args.dataset
+    ds_params['pre_select_features'] = args.pre_select_features
     if args.features is not None:
         args.features = args.features.split()
+    ds_params['features'] = args.features
+    return ds_params
 
-    ds = load_dataset(args.n_segments,
-                      args.compactness,
-                      args.features,
-                      args.graph_type, 
-                      args.slic_method,
-                      args.dataset,
-                      args.pre_select_features)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser = set_dataset_arguments(parser)
+    args = parser.parse_args()
+    ds_params = get_dataset_params(args)
+
+
+    ds, splits, labels = load_dataset(ds_params['n_splits'],
+                                      ds_params['n_segments'],
+                                      ds_params['compactness'],
+                                      ds_params['features'],
+                                      ds_params['graph_type'], 
+                                      ds_params['slic_method'],
+                                      ds_params['dataset'],
+                                      ds_params['pre_select_features'])
     
     print('Done.')
