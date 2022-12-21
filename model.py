@@ -22,7 +22,6 @@ class GCN(torch.nn.Module):
         self.initial_conv = GCNConv(data.num_features, hidden_channel_size)
         self.conv1 = GCNConv(hidden_channel_size, hidden_channel_size)
         self.conv2 = GCNConv(hidden_channel_size, hidden_channel_size)
-        self.conv3 = GCNConv(hidden_channel_size, hidden_channel_size)
         self.out = nn.Linear(hidden_channel_size*2, data.num_classes)
 
     def forward(self, x, edge_index, batch_index):
@@ -31,8 +30,6 @@ class GCN(torch.nn.Module):
         hidden = self.conv1(hidden, edge_index)
         hidden = F.relu(hidden)
         hidden = self.conv2(hidden, edge_index)
-        hidden = F.relu(hidden)
-        hidden = self.conv3(hidden, edge_index)
         hidden = F.relu(hidden)
         hidden = torch.cat([global_mean_pool(hidden, batch_index),
                             global_max_pool(hidden, batch_index)], dim=1)
