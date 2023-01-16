@@ -1,4 +1,3 @@
-
 import torch
 import numpy as np
 from torch_geometric.data import Dataset, Data
@@ -132,19 +131,16 @@ class SuperPixelGraphGeo(Dataset):
         print(f"Average number of edges: {self.__avg_num_edges} with standard deviation {self.__std_deviation_num_edges}")
 
     def get_ds_name(self):
-        
         if self.pre_select_features:
             self.features.sort()
             name = './geo_ds/n{}-c{}-{}-{}'.format(self.n_segments, 
                                                    self.graph_type,
                                                    self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness),
                                                    '-'.join(self.features))
-        
         else:
             name = './geo_ds/n{}-{}-{}'.format(self.n_segments, 
                                             self.graph_type,
                                             self.slic_method if self.slic_method == 'SLIC0' else self.slic_method + 'c' + str(self.compactness))
-        print(name)
         return name
 
     def load_index_info(self):
@@ -297,3 +293,8 @@ class SuperPixelGraphGeo(Dataset):
     def get(self, idx):
         data = torch.load(self.root + '/processed' + f'/data_{idx}.pt')
         return data
+
+    def get_og_img(self, idx):
+        path = self.raw_path_list[idx]
+        img = self.load_img(path)
+        return img

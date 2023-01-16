@@ -248,6 +248,12 @@ class ColorSLIC(InMemoryDataset):
             data_list = [self[i] for i in range(len(self))]
             self.save_stats(data_list)
             self.loading_time = 0
+    
+    def get_og_img(self, idx):
+        data = self.load_data()
+        img, _ = data[idx]
+        img_np = torch.stack([img[0], img[1], img[2]], dim=2).numpy()
+        return img_np
 
     @property
     def processed_file_names(self):
