@@ -157,7 +157,7 @@ def set_dataset_arguments(parser):
                         help="compactness for SLIC algorithm. (default: 0.1)")
     parser.add_argument("--graph_type", type=str, default='RAG',
                         help="RAG, (1 | 2 | 4 | 8 | 16)NNSpatial or (1 | 2 | 4 | 8 | 16)NNFeatures")
-    parser.add_argument("--slic_method", type=str, default=0.1,
+    parser.add_argument("--slic_method", type=str, default='SLIC',
                         help="SLIC0, SLIC")
     parser.add_argument("--features", type=str, default=None,
                         help="space separated list of features. options are: avg_color, std_deviation_color, centroid, std_deviation_centroid, num_pixels. (default: avg_color centroid)")
