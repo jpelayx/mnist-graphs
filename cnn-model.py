@@ -15,7 +15,7 @@ from torch_geometric.nn import GCNConv, global_mean_pool, global_max_pool
 import dataset_loader
 
 class CNN(torch.nn.Module):
-    def __init__(self, num_channels, num_classes):
+    def __init__(self, num_channels, img_size, num_classes):
         super(CNN, self).__init__()
         # using architecture inspired by MNISTSuperpixels example 
         # (https://medium.com/@rtsrumi07/understanding-graph-neural-network-with-hands-on-example-part-2-139a691ebeac)
@@ -23,7 +23,7 @@ class CNN(torch.nn.Module):
         self.initial_conv = Conv2d(num_channels, hidden_channel_size, 5)
         self.conv1 = Conv2d(hidden_channel_size, hidden_channel_size, 5)
         self.conv2 = Conv2d(hidden_channel_size, hidden_channel_size, 5)
-        self.out = nn.Linear(hidden_channel_size, num_classes)
+        self.out = nn.Linear(int(hidden_channel_size*2*((img_size-(4*3))/2)**2), num_classes)
 
     def forward(self, x):
         hidden = self.initial_conv(x)
@@ -33,7 +33,8 @@ class CNN(torch.nn.Module):
         hidden = self.conv2(hidden)
         hidden = F.relu(hidden)
         hidden = torch.cat([F.max_pool2d(hidden, 2, 2),
-                            F.avg_pool2d(hidden, 2, 2)])
+                            F.avg_pool2d(hidden, 2, 2)], dim=1)
+        hidden = torch.flatten(hidden, 1)
         out = self.out(hidden)
         return out 
 
@@ -123,6 +124,7 @@ if __name__ == '__main__':
         test_ds = datasets.MNIST('./mnist/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
         num_channels = 1
+        img_size = 28
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'fashion_mnist':
@@ -130,6 +132,7 @@ if __name__ == '__main__':
         test_ds  = datasets.FashionMNIST('./fashion_mnist/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
         num_channels = 1
+        img_size = 28
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'cifar10':
@@ -137,20 +140,23 @@ if __name__ == '__main__':
         test_ds  = datasets.CIFAR10('./cifar10/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
         num_channels = 3
-        targets = torch.cat((train_ds.targets, test_ds.targets))
+        img_size = 32
+        targets = torch.cat((torch.tensor(train_ds.targets), torch.tensor(test_ds.targets)))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'cifar100':
         train_ds = datasets.CIFAR100('./cifar100/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.CIFAR100('./cifar100/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 100
         num_channels = 3
-        targets = torch.cat((train_ds.targets, test_ds.targets))
+        img_size = 32
+        targets = torch.cat((torch.tensor(train_ds.targets), torch.tensor(test_ds.targets)))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'stl10':
         train_ds = datasets.STL10('./stl10/train', split='train', download=True, transform=T.ToTensor())
         test_ds  = datasets.STL10('./stl10/test', split='test', download=True, transform=T.ToTensor())
         num_classes = 10
         num_channels = 3
+        img_size = 96
         targets = torch.cat((torch.from_numpy(train_ds.labels), torch.from_numpy(test_ds.labels)))
         ds = ConcatDataset([train_ds, test_ds])
     else:
@@ -178,7 +184,7 @@ if __name__ == '__main__':
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
 
-        model = CNN(num_channels, num_classes).to(device)
+        model = CNN(num_channels, img_size, num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
         loss_fn = torch.nn.CrossEntropyLoss()
 
