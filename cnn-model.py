@@ -122,31 +122,31 @@ if __name__ == '__main__':
                         'training time',
                         'loading time']
     
-    if args['dataset'] == 'mnist':
+    if args.dataset == 'mnist':
         train_ds = datasets.MNIST('./mnist/train', train=True, download=True, transform=T.ToTensor())
         test_ds = datasets.MNIST('./mnist/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
-    elif args['dataset'] == 'fashion_mnist':
+    elif args.dataset == 'fashion_mnist':
         train_ds = datasets.FashionMNIST('./fashion_mnist/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.FashionMNIST('./fashion_mnist/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
-    elif args['dataset'] == 'cifar10':
+    elif args.dataset == 'cifar10':
         train_ds = datasets.CIFAR10('./cifar10/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.CIFAR10('./cifar10/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
-    elif args['dataset'] == 'cifar100':
+    elif args.dataset == 'cifar100':
         train_ds = datasets.CIFAR100('./cifar100/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.CIFAR100('./cifar100/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 100
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
-    elif args['dataset'] == 'stl10':
+    elif args.dataset == 'stl10':
         train_ds = datasets.STL10('./stl10/train', split='train', download=True, transform=T.ToTensor())
         test_ds  = datasets.STL10('./stl10/test', split='test', download=True, transform=T.ToTensor())
         num_classes = 10
