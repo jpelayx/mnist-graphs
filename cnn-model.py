@@ -17,13 +17,11 @@ import dataset_loader
 class CNN(torch.nn.Module):
     def __init__(self, num_channels, img_size, num_classes):
         super(CNN, self).__init__()
-        # using architecture inspired by MNISTSuperpixels example 
-        # (https://medium.com/@rtsrumi07/understanding-graph-neural-network-with-hands-on-example-part-2-139a691ebeac)
         hidden_channel_size = 64 
-        self.initial_conv = Conv2d(num_channels, hidden_channel_size, 5)
-        self.conv1 = Conv2d(hidden_channel_size, hidden_channel_size, 5)
-        self.conv2 = Conv2d(hidden_channel_size, hidden_channel_size, 5)
-        self.out = nn.Linear(int(hidden_channel_size*2*((img_size-(4*3))/2)**2), num_classes)
+        self.initial_conv = Conv2d(num_channels, hidden_channel_size, 3)
+        self.conv1 = Conv2d(hidden_channel_size, hidden_channel_size, 3)
+        self.conv2 = Conv2d(hidden_channel_size, hidden_channel_size, 3)
+        self.out = nn.Linear(int(hidden_channel_size*2*((img_size-(2*3))/2)**2), num_classes)
 
     def forward(self, x):
         hidden = self.initial_conv(x)
