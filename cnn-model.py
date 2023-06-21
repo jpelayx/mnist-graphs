@@ -15,12 +15,12 @@ from torch_geometric.nn import GCNConv, global_mean_pool, global_max_pool
 import dataset_loader
 
 class CNN(torch.nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_channels, num_classes):
         super(CNN, self).__init__()
         # using architecture inspired by MNISTSuperpixels example 
         # (https://medium.com/@rtsrumi07/understanding-graph-neural-network-with-hands-on-example-part-2-139a691ebeac)
         hidden_channel_size = 64 
-        self.initial_conv = Conv2d(3, hidden_channel_size, 5)
+        self.initial_conv = Conv2d(num_channels, hidden_channel_size, 5)
         self.conv1 = Conv2d(hidden_channel_size, hidden_channel_size, 5)
         self.conv2 = Conv2d(hidden_channel_size, hidden_channel_size, 5)
         self.out = nn.Linear(hidden_channel_size, num_classes)
@@ -39,12 +39,11 @@ class CNN(torch.nn.Module):
 
 def train(dataloader, model, loss_fn, optimizer, device):
     for _, b in enumerate(dataloader):
-        if type(b.y) != torch.Tensor:
-            b.y = torch.tensor([b.y])
-        b.y = b.y.type(torch.LongTensor)
-        b.to(device)
-        pred = model(b.x)
-        loss = loss_fn(pred, b.y)
+        x, y = b
+        x = x.to(device)
+        y = y.to(device)
+        pred = model(x)
+        loss = loss_fn(pred, y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -56,13 +55,10 @@ def test(dataloader, model, loss_fn, device, labels):
     Y, Y_pred = torch.empty(0), torch.empty(0)
     with torch.no_grad():
         for d in dataloader:
-            if type(d.y) != torch.Tensor:
-                d.y = torch.tensor([d.y])
-            d.y = d.y.type(torch.LongTensor)
-            d.to(device)
-            pred = model(d.x)
-            test_loss += loss_fn(pred, d.y).item()
-            y = d.y
+            x, y = d
+            x, y = x.to(device), y.to(device)
+            pred = model(x)
+            test_loss += loss_fn(pred, y).item()
             if type(y) != torch.Tensor:
                 y = torch.tensor([y])
             y = y.type(torch.LongTensor)
@@ -126,38 +122,43 @@ if __name__ == '__main__':
         train_ds = datasets.MNIST('./mnist/train', train=True, download=True, transform=T.ToTensor())
         test_ds = datasets.MNIST('./mnist/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
+        num_channels = 1
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'fashion_mnist':
         train_ds = datasets.FashionMNIST('./fashion_mnist/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.FashionMNIST('./fashion_mnist/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
+        num_channels = 1
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'cifar10':
         train_ds = datasets.CIFAR10('./cifar10/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.CIFAR10('./cifar10/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 10
+        num_channels = 3
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'cifar100':
         train_ds = datasets.CIFAR100('./cifar100/train', train=True, download=True, transform=T.ToTensor())
         test_ds  = datasets.CIFAR100('./cifar100/test', train=False, download=True, transform=T.ToTensor())
         num_classes = 100
+        num_channels = 3
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif args.dataset == 'stl10':
         train_ds = datasets.STL10('./stl10/train', split='train', download=True, transform=T.ToTensor())
         test_ds  = datasets.STL10('./stl10/test', split='test', download=True, transform=T.ToTensor())
         num_classes = 10
+        num_channels = 3
         targets = torch.cat((torch.from_numpy(train_ds.labels), torch.from_numpy(test_ds.labels)))
         ds = ConcatDataset([train_ds, test_ds])
     else:
         ds = None
-    splits = StratifiedKFold(n_splits=5).split(np.zeros(len(train_ds) + len(test_ds)), )
+    splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
 
-    out = './{}/cnn.csv'.format(args['dataset'])
-    meta_out = './{}/cnn_training_info.csv'.format(args['dataset'])
+    out = './{}/cnn.csv'.format(args.dataset)
+    meta_out = './{}/cnn_training_info.csv'.format(args.dataset)
 
     with open(out, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
@@ -177,7 +178,7 @@ if __name__ == '__main__':
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
 
-        model = CNN(num_classes).to(device)
+        model = CNN(num_channels, num_classes).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
         loss_fn = torch.nn.CrossEntropyLoss()
 
