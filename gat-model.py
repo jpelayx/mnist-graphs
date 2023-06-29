@@ -14,21 +14,24 @@ from torch_geometric.nn import GATConv, global_mean_pool, global_max_pool
 import dataset_loader
 
 class GAT(torch.nn.Module):
-    def __init__(self, data):
+    def __init__(self, num_heads, num_layers, data):
         super(GAT, self).__init__()
-        hidden_channel_size = 64 
-        num_heads = 1
-        self.initial_conv = GATConv(data.num_features, hidden_channel_size, heads=num_heads)
-        self.conv1 = GATConv(hidden_channel_size * num_heads, hidden_channel_size, heads=num_heads)
-        self.conv2 = GATConv(hidden_channel_size * num_heads, hidden_channel_size, heads=num_heads)
-        self.out = nn.Linear(hidden_channel_size * num_heads * 2, data.num_classes)
+        in_out_size = 32
+        out_size = 64
+        self.initial_conv = GATConv(data.num_features, in_out_size, heads=num_heads)
+        in_size = in_out_size * num_heads
+        self.hidden_layers = []
+        for _ in range(num_layers-1):
+            self.hidden_layers.append(GATConv(in_size, out_size, heads=num_heads))
+            in_size = out_size * num_heads
+        self.out = nn.Linear(in_size * 2, data.num_classes)
 
     def forward(self, x, edge_index, batch_index):
         hidden = self.initial_conv(x, edge_index)
         hidden = F.relu(hidden)
-        hidden = self.conv1(hidden, edge_index)
-        hidden = F.relu(hidden)
-        hidden = self.conv2(hidden, edge_index)
+        for gat in self.hidden_layers:
+            hidden = gat(hidden, edge_index)
+            hidden = F.relu(hidden)
         hidden = F.relu(hidden)
         hidden = torch.cat([global_mean_pool(hidden, batch_index),
                             global_max_pool(hidden, batch_index)], dim=1)
@@ -96,6 +99,10 @@ if __name__ == '__main__':
     parser.add_argument("--learning_rate", type=float, default=0.001,
                         help="model's learning rate")
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--n_heads", type=int, default=2, 
+                        help='number of attention heads in each GAT layer. default = 2')
+    parser.add_argument('--n_layers', type=int, default=3, 
+                        help='number of stacked GAT layers. default = 3')
     parser = dataset_loader.set_dataset_arguments(parser)
     args = parser.parse_args()
 
@@ -175,7 +182,7 @@ if __name__ == '__main__':
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
 
-        model = GAT(info_ds).to(device)
+        model = GAT(args.n_heads, args.n_layers, info_ds).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
         loss_fn = torch.nn.CrossEntropyLoss()
 
