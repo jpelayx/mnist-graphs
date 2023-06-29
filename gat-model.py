@@ -20,7 +20,7 @@ class GAT(torch.nn.Module):
         out_size = 64
         self.initial_conv = GATConv(data.num_features, in_out_size, heads=num_heads)
         in_size = in_out_size * num_heads
-        self.hidden_layers = []
+        self.hidden_layers = nn.ModuleList([]) 
         for _ in range(num_layers-1):
             self.hidden_layers.append(GATConv(in_size, out_size, heads=num_heads))
             in_size = out_size * num_heads
