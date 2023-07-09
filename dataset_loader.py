@@ -5,6 +5,7 @@ import cifar100_slic
 import stl10_slic
 import stanfordcars_slic
 import geo_ds_slic
+import torchvision.datasets as datasets
  
 import numpy as np
 import torch
@@ -23,6 +24,18 @@ def load_dataset(args):
     + labels: int list with dataset's labels 
     """
     params = get_dataset_params(args)
+
+    try:
+        load_graphs = args.model != 'CNN'
+    except:
+        load_graphs = True
+    
+    if load_graphs:
+        return load_graph_ds(params)
+    else:
+        return load_image_ds(params)
+
+def load_graph_ds(params):
     dataset = params['dataset']
     n_splits = params['n_splits']
     ds = None
@@ -151,6 +164,39 @@ def load_dataset(args):
     splits = StratifiedKFold(n_splits=n_splits).split(np.zeros(len(targets)), targets)
     return ds, splits, labels
 
+def load_image_ds(params):
+    dataset = params['dataset']
+    if dataset == 'mnist':
+        train_ds = datasets.MNIST('./mnist/train', train=True, download=True, transform=T.ToTensor())
+        test_ds = datasets.MNIST('./mnist/test', train=False, download=True, transform=T.ToTensor())
+        targets = torch.cat((train_ds.targets, test_ds.targets))
+        ds = ConcatDataset([train_ds, test_ds])
+    elif dataset == 'fashion_mnist':
+        train_ds = datasets.FashionMNIST('./fashion_mnist/train', train=True, download=True, transform=T.ToTensor())
+        test_ds  = datasets.FashionMNIST('./fashion_mnist/test', train=False, download=True, transform=T.ToTensor())
+        targets = torch.cat((train_ds.targets, test_ds.targets))
+        ds = ConcatDataset([train_ds, test_ds])
+    elif dataset == 'cifar10':
+        train_ds = datasets.CIFAR10('./cifar10/train', train=True, download=True, transform=T.ToTensor())
+        test_ds  = datasets.CIFAR10('./cifar10/test', train=False, download=True, transform=T.ToTensor())
+        targets = torch.cat((torch.tensor(train_ds.targets), torch.tensor(test_ds.targets)))
+        ds = ConcatDataset([train_ds, test_ds])
+    elif dataset == 'cifar100':
+        train_ds = datasets.CIFAR100('./cifar100/train', train=True, download=True, transform=T.ToTensor())
+        test_ds  = datasets.CIFAR100('./cifar100/test', train=False, download=True, transform=T.ToTensor())
+        targets = torch.cat((torch.tensor(train_ds.targets), torch.tensor(test_ds.targets)))
+        ds = ConcatDataset([train_ds, test_ds])
+    elif dataset == 'stl10':
+        train_ds = datasets.STL10('./stl10/train', split='train', download=True, transform=T.ToTensor())
+        test_ds  = datasets.STL10('./stl10/test', split='test', download=True, transform=T.ToTensor())
+        targets = torch.cat((torch.from_numpy(train_ds.labels), torch.from_numpy(test_ds.labels)))
+        ds = ConcatDataset([train_ds, test_ds])
+    else:
+        print('No dataset called: \"' + dataset + '\" available.')
+        return None
+    splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
+    return ds, splits, targets
+
 def set_dataset_arguments(parser):
     parser.add_argument("--n_splits", type=int, default=5,
                         help="number of splits in StratifiedKFold cross validation")
@@ -190,6 +236,7 @@ if __name__ == '__main__':
     parser = set_dataset_arguments(parser)
     args = parser.parse_args()
 
-    ds, splits, labels = load_dataset(args)
+    params = get_dataset_params(args)
+    ds, splits, labels = load_graph_ds(params)
     
     print('Done.')
