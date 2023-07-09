@@ -197,6 +197,36 @@ def load_image_ds(params):
     splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
     return ds, splits, targets
 
+def dataset_info(args):
+    info = {}
+    if args.dataset == 'mnist':
+        num_classes = 10
+        num_channels = 1
+        img_size = 28
+    elif args.dataset == 'fashion_mnist':
+        num_classes = 10
+        num_channels = 1
+        img_size = 28
+    elif args.dataset == 'cifar10':
+        num_classes = 10
+        num_channels = 3
+        img_size = 32
+    elif args.dataset == 'cifar100':
+        num_classes = 100
+        num_channels = 3
+        img_size = 32
+    elif args.dataset == 'stl10':
+        num_classes = 10
+        num_channels = 3
+        img_size = 96
+    else:
+        return None
+    info['classes'] = num_classes
+    info['channels'] = num_channels
+    info['image size'] = img_size
+    return info
+
+
 def set_dataset_arguments(parser):
     parser.add_argument("--n_splits", type=int, default=5,
                         help="number of splits in StratifiedKFold cross validation")
