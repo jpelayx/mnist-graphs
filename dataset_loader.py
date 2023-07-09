@@ -14,7 +14,7 @@ from sklearn.model_selection import StratifiedKFold
 import argparse
 
 
-def load_dataset(n_splits, n_segments, compactness, features, graph_type, slic_method, dataset, pre_select_features):
+def load_dataset(args):
     """
     loads dataset with specified parameters and returns:
 
@@ -22,118 +22,121 @@ def load_dataset(n_splits, n_segments, compactness, features, graph_type, slic_m
     + splits: as returned by sklearn's StratifiedKFold split
     + labels: int list with dataset's labels 
     """
+    params = get_dataset_params(args)
+    dataset = params['dataset']
+    n_splits = params['n_splits']
     ds = None
     if dataset == 'mnist':
         test_ds  = mnist_slic.SuperPixelGraphMNIST(root=None, 
-                                                   n_segments=n_segments,
-                                                   compactness=compactness,
-                                                   features=features,
-                                                   graph_type=graph_type,
-                                                   slic_method=slic_method,
+                                                   n_segments=params['n_segments'],
+                                                   compactness=params['compactness'],
+                                                   features=params['features'],
+                                                   graph_type=params['graph_type'],
+                                                   slic_method=params['slic_method'],
                                                    train=False,
-                                                   pre_select_features=pre_select_features)
+                                                   pre_select_features=params['pre_select_features'])
         train_ds = mnist_slic.SuperPixelGraphMNIST(root=None, 
-                                                   n_segments=n_segments,
-                                                   compactness=compactness,
-                                                   features=features,
-                                                   graph_type=graph_type,
-                                                   slic_method=slic_method,
+                                                   n_segments=params['n_segments'],
+                                                   compactness=params['compactness'],
+                                                   features=params['features'],
+                                                   graph_type=params['graph_type'],
+                                                   slic_method=params['slic_method'],
                                                    train=True,
-                                                   pre_select_features=pre_select_features)
+                                                   pre_select_features=params['pre_select_features'])
     elif dataset == 'fashion_mnist':
         test_ds  = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=None, 
-                                                   n_segments=n_segments,
-                                                   compactness=compactness,
-                                                   features=features,
-                                                   graph_type=graph_type,
-                                                   slic_method=slic_method,
+                                                   n_segments=params['n_segments'],
+                                                   compactness=params['compactness'],
+                                                   features=params['features'],
+                                                   graph_type=params['graph_type'],
+                                                   slic_method=params['slic_method'],
                                                    train=False,
-                                                   pre_select_features=pre_select_features)
+                                                   pre_select_features=params['pre_select_features'])
         train_ds = fashion_mnist_slic.SuperPixelGraphFashionMNIST(root=None, 
-                                                   n_segments=n_segments,
-                                                   compactness=compactness,
-                                                   features=features,
-                                                   graph_type=graph_type,
-                                                   slic_method=slic_method,
+                                                   n_segments=params['n_segments'],
+                                                   compactness=params['compactness'],
+                                                   features=params['features'],
+                                                   graph_type=params['graph_type'],
+                                                   slic_method=params['slic_method'],
                                                    train=True,
-                                                   pre_select_features=pre_select_features)
+                                                   pre_select_features=params['pre_select_features'])
     elif dataset == 'cifar10':
         test_ds  = cifar10_slic.SuperPixelGraphCIFAR10(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=False,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
         train_ds = cifar10_slic.SuperPixelGraphCIFAR10(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=True,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
     elif dataset == 'cifar100':
         test_ds  = cifar100_slic.SuperPixelGraphCIFAR100(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=False,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
         train_ds = cifar100_slic.SuperPixelGraphCIFAR100(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=True,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
     elif dataset == 'stl10':
         test_ds  = stl10_slic.SuperPixelGraphSTL10(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=False,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
         train_ds = stl10_slic.SuperPixelGraphSTL10(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=True,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
     elif dataset == 'stanfordcars':
         test_ds  = stanfordcars_slic.SuperPixelGraphStanfordCars(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=False,
                                                        pre_select_features=pre_select_features)
         train_ds = stanfordcars_slic.SuperPixelGraphStanfordCars(root=None, 
-                                                       n_segments=n_segments,
-                                                       compactness=compactness,
-                                                       features=features,
-                                                       graph_type=graph_type,
-                                                       slic_method=slic_method,
+                                                       n_segments=params['n_segments'],
+                                                       compactness=params['compactness'],
+                                                       features=params['features'],
+                                                       graph_type=params['graph_type'],
+                                                       slic_method=params['slic_method'],
                                                        train=True,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
     elif dataset == 'geo_ds':
         ds = geo_ds_slic.SuperPixelGraphGeo('/home/julia/Documents/ds',
                                             root=None,
-                                            n_segments=n_segments,
-                                            compactness=compactness,
-                                            features=features,
-                                            graph_type=graph_type,
-                                            slic_method=slic_method,
-                                            pre_select_features=pre_select_features)
+                                            n_segments=params['n_segments'],
+                                            compactness=params['compactness'],
+                                            features=params['features'],
+                                            graph_type=params['graph_type'],
+                                            slic_method=params['slic_method'],
+                                            pre_select_features=params['pre_select_features'])
     else:
         print('No dataset called: \"' + dataset + '\" available.')
         return None
@@ -178,7 +181,7 @@ def get_dataset_params(args):
     ds_params['dataset'] = args.dataset
     ds_params['pre_select_features'] = args.pre_select_features
     if args.features is not None:
-        args.features = args.features.split()
+        args.features = args.features.split().sort()
     ds_params['features'] = args.features
     return ds_params
 
@@ -186,16 +189,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser = set_dataset_arguments(parser)
     args = parser.parse_args()
-    ds_params = get_dataset_params(args)
 
-
-    ds, splits, labels = load_dataset(ds_params['n_splits'],
-                                      ds_params['n_segments'],
-                                      ds_params['compactness'],
-                                      ds_params['features'],
-                                      ds_params['graph_type'], 
-                                      ds_params['slic_method'],
-                                      ds_params['dataset'],
-                                      ds_params['pre_select_features'])
+    ds, splits, labels = load_dataset(args)
     
     print('Done.')
