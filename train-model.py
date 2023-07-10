@@ -6,7 +6,6 @@ import torch
 from torch.utils.data import ConcatDataset, SubsetRandomSampler, Subset
 from torch_geometric.loader import DataLoader
 
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
 def checkpoint(model, directory, filename):
