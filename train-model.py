@@ -199,6 +199,9 @@ if __name__ == '__main__':
             if t > 0:
                 if validation_res['loss'] - previous_validation_res['loss'] > -min_improvement:
                     epochs_without_improvement += 1
+                elif epochs_without_improvement > 0:
+                    epochs_without_improvement = 0
+                    
                 if validation_res['loss'] < best_validation_res['loss']:
                     best_validation_res = validation_res
                     best_epoch = t
