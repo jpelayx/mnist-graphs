@@ -10,6 +10,7 @@ import torchvision.datasets as datasets
 import numpy as np
 import torch
 from torch.utils.data import ConcatDataset
+import torchvision.transforms as T
 from sklearn.model_selection import StratifiedKFold
 
 import argparse
@@ -132,7 +133,7 @@ def load_graph_ds(params):
                                                        graph_type=params['graph_type'],
                                                        slic_method=params['slic_method'],
                                                        train=False,
-                                                       pre_select_features=pre_select_features)
+                                                       pre_select_features=params['pre_select_features'])
         train_ds = stanfordcars_slic.SuperPixelGraphStanfordCars(root=None, 
                                                        n_segments=params['n_segments'],
                                                        compactness=params['compactness'],
@@ -154,15 +155,13 @@ def load_graph_ds(params):
         print('No dataset called: \"' + dataset + '\" available.')
         return None
     if ds is None: 
-        labels = train_ds.get_labels()
         targets = torch.cat([train_ds.get_targets(), test_ds.get_targets()])
         ds = ConcatDataset([train_ds, test_ds])
     else:
-        labels = ds.get_labels()
         targets = ds.get_targets()
         ds = ConcatDataset([ds])
     splits = StratifiedKFold(n_splits=n_splits).split(np.zeros(len(targets)), targets)
-    return ds, splits, labels
+    return ds, splits, targets
 
 def load_image_ds(params):
     dataset = params['dataset']
