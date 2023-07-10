@@ -236,13 +236,17 @@ if __name__ == '__main__':
         best_results.append(best_test_res)
 
     avg_result_epoch = {}
-    history = np.array(history, dtype=object)
     for e in range(epochs):
+        results = []
+        for fold in range(len(history)):
+            try:
+                results.append(history[fold][e])
+            except:
+                continue
         for field in field_names:
-            avg_result_epoch[field] = np.average([f[field] for f in history[:,e]])
+            avg_result_epoch[field] = np.average([f[field] for f in results])
             if np.isnan(avg_result_epoch[field]):
                 avg_result_epoch[field] = ''
-        print(avg_result_epoch)
         with open(out_dir + out_file + '.csv', 'a', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=field_names)
             writer.writerow(avg_result_epoch)
