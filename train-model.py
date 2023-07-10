@@ -236,7 +236,7 @@ if __name__ == '__main__':
         best_results.append(best_test_res)
 
     avg_result_epoch = {}
-    history = np.array(history)
+    history = np.array(history, dtype=object)
     for e in range(epochs):
         for field in field_names:
             avg_result_epoch[field] = np.average([f[field] for f in history[:,e]])
