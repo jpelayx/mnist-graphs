@@ -83,7 +83,7 @@ class CNN(torch.nn.Module):
 
         return out 
 
-def train(model, trainloader, loss_fn, optimizer, device):
+def train(trainloader, model, loss_fn, optimizer, device):
     if type(model) == CNN:
         train_images(model, trainloader, loss_fn, optimizer, device)
     else: # GCN, GAT
@@ -152,7 +152,7 @@ def eval_graphs(testloader, model, loss_fn, device, labels):
     return {"accuracy": accuracy, 
             "precision (micro)": precision_micro, "precision (macro)": precision_macro, "precision (weighted)": precision_weighted,
             "recall (micro)": recall_micro, "recall (macro)": recall_macro, "recall (weighted)": recall_weighted,
-            "f-measure (micro)": f1_micro, "f-measure (macro)": f1_macro, "f-measure (weighted)": f1_weighted,
+            "f1-measure (micro)": f1_micro, "f1-measure (macro)": f1_macro, "f1-measure (weighted)": f1_weighted,
             "loss": test_loss}
 
 def eval_images(testloader, model, loss_fn, device, labels):
@@ -185,5 +185,5 @@ def eval_images(testloader, model, loss_fn, device, labels):
     return {"accuracy": accuracy, 
             "precision (micro)": precision_micro, "precision (macro)": precision_macro, "precision (weighted)": precision_weighted,
             "recall (micro)": recall_micro, "recall (macro)": recall_macro, "recall (weighted)": recall_weighted,
-            "f-measure (micro)": f1_micro, "f-measure (macro)": f1_macro, "f-measure (weighted)": f1_weighted,
+            "f1-measure (micro)": f1_micro, "f1-measure (macro)": f1_macro, "f1-measure (weighted)": f1_weighted,
             "loss": test_loss}

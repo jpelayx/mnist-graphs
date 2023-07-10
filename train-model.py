@@ -8,8 +8,8 @@ from torch_geometric.loader import DataLoader
 
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
-def checkpoint(model, directory, filename):
-    file = directory + filename +  '.pth'
+def checkpoint(model, directory, filename, fold):
+    file = directory + filename + f'.fold{fold}' + '.pth'
     torch.save(model.state_dict(), file)
 
 if __name__ == '__main__':
@@ -36,6 +36,8 @@ if __name__ == '__main__':
                         help='number of attention heads in GAT layer. default = 2')
     parser.add_argument('--n_layers', type=int, default=3, 
                         help='number of stacked conv. layers (GAT or GCN). default = 3')
+    parser.add_argument('--info_filename', '-f', type=str, default='training_info', 
+                        help='name of file where training information is stored')
     parser = dsl.set_dataset_arguments(parser)
     args = parser.parse_args()
 
@@ -43,7 +45,7 @@ if __name__ == '__main__':
                    "accuracy", 
                    "precision (micro)", "precision (macro)", "precision (weighted)", 
                    "recall (micro)", "recall (macro)", "recall (weighted)", 
-                   "f-measure (micro)", "f-measure (macro)", "f-measure (weighted)", 
+                   "f1-measure (micro)", "f1-measure (macro)", "f1-measure (weighted)", 
                    "loss", "validation loss"]
     meta_field_names = ['model',
                         'num. layers',
@@ -74,7 +76,7 @@ if __name__ == '__main__':
                         'training time',
                         'loading time']
     t0 = time.time()
-    ds, splits, labels = dsl.load_dataset(args)
+    ds, splits, targets = dsl.load_dataset(args)
     loading_time = time.time() - t0
     ds_info = dsl.dataset_info(args)
 
@@ -131,7 +133,7 @@ if __name__ == '__main__':
                                                 '-'.join(info_ds.features))
 
 
-    meta_out = './{}_training_info.csv'.format(args.dataset)
+    meta_out = './{}.csv'.format(args.info_filename)
 
     os.makedirs(out_dir, exist_ok=True)
     with open(out_dir + out_file + '.csv', 'w', newline='') as csvfile:
@@ -150,14 +152,15 @@ if __name__ == '__main__':
     training_time = []
     last_epochs = []
     best_epochs = []
+    best_results = []
 
     # stratified k-fold cross validation 
-    for train_index, test_index in splits:
+    for train_validation_index, test_index in splits:
         # test data 
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
         
         # train data divided into 10% validation and 90% train, maintaning class proportions 
-        train_index, validation_index = train_test_split(Subset(ds, train_index), test_size=0.1, stratify=Subset(labels, train_index))
+        train_index, validation_index = train_test_split(np.arange(len(train_validation_index)), test_size=0.1, stratify=Subset(targets, train_validation_index))
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 
@@ -180,6 +183,7 @@ if __name__ == '__main__':
         epochs_without_improvement = 0
         previous_validation_res = {}
         best_validation_res = {}
+        best_test_res = {}
         best_epoch = 0
         last_epoch = 0
         print('------------------------')
@@ -191,23 +195,26 @@ if __name__ == '__main__':
 
             # 2. evaluate model with validation set, checking if model should stop 
             #    and keeping track of the best epoch so far 
-            validation_res = eval(validation_loader, model, loss_fn, device, labels)
+            validation_res = eval(validation_loader, model, loss_fn, device, targets)
             if t > 0:
-                if validation_res['loss'] - previous_validation_res['loss'] < min_improvement:
+                if validation_res['loss'] - previous_validation_res['loss'] > -min_improvement:
                     epochs_without_improvement += 1
                 if validation_res['loss'] < best_validation_res['loss']:
                     best_validation_res = validation_res
                     best_epoch = t
-                    checkpoint(model, out_dir, out_file)
+                    checkpoint(model, out_dir, out_file, len(history))
             else:
                 best_validation_res = validation_res
                 best_epoch = t
-                checkpoint(model, out_dir, out_file)
+                checkpoint(model, out_dir, out_file, len(history))
+            previous_validation_res = validation_res
             
             # 3. evaluate model with test set, reporting performance metrics 
-            test_res = eval(test_loader, model, loss_fn, device, labels)
+            test_res = eval(test_loader, model, loss_fn, device, targets)
             test_res['epoch'] = t
             test_res['validation loss'] = validation_res['loss']
+            if best_epoch == t:
+                best_test_res = test_res
             if verbose_output:
                 print(f'Epoch: {t}, f1: {test_res["f1-measure (macro)"]}, loss: {test_res["loss"]}')
             fold_hist.append(test_res)
@@ -223,33 +230,44 @@ if __name__ == '__main__':
         history.append(fold_hist)
         last_epochs.append(str(fold_hist[-1]['epoch']))
         best_epochs.append(str(best_epoch))
+        best_results.append(best_test_res)
 
-    avg_res = {}
-    with open(out_dir + out_file + '.csv', 'a', newline='') as csvfile:
-        history = np.array(history)
-        for e in range(epochs):
-            for field in field_names:
-                avg_res[field] = np.average([f[field] for f in history[:,e]])
-                if np.isnan(avg_res[field]):
-                    avg_res[field] = '-'
+    avg_result_epoch = {}
+    history = np.array(history)
+    for e in range(epochs):
+        for field in field_names:
+            avg_result_epoch[field] = np.average([f[field] for f in history[:,e]])
+            if np.isnan(avg_result_epoch[field]):
+                avg_result_epoch[field] = ''
+        print(avg_result_epoch)
+        with open(out_dir + out_file + '.csv', 'a', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=field_names)
-            writer.writerow(avg_res)
+            writer.writerow(avg_result_epoch)
 
+    final_result = {}
+    for field in field_names:
+        final_result[field] = np.average([f[field] for f in best_results])
     meta_info['training time'] = np.average(training_time)
-    meta_info['accuracy'] = avg_res['Accuracy']
-    meta_info['precision micro'] = avg_res['Precision (micro)']
-    meta_info['precision macro'] = avg_res['Precision (macro)']
-    meta_info['precision weighted'] = avg_res['Precision (weighted)']
-    meta_info['recall micro'] = avg_res['Recall (micro)']
-    meta_info['recall macro'] = avg_res['Recall (macro)']
-    meta_info['recall weighted'] = avg_res['Recall (weighted)']
-    meta_info['micro'] = avg_res['F-measure (micro)']
-    meta_info['macro'] = avg_res['F-measure (macro)']
-    meta_info['weighted'] = avg_res['F-measure (weighted)']
-    meta_info['avg. loss'] = avg_res['Avg loss']
+    meta_info['accuracy'] = final_result['accuracy']
+    meta_info['precision micro'] = final_result['precision (micro)']
+    meta_info['precision macro'] = final_result['precision (macro)']
+    meta_info['precision weighted'] = final_result['precision (weighted)']
+    meta_info['recall micro'] = final_result['recall (micro)']
+    meta_info['recall macro'] = final_result['recall (macro)']
+    meta_info['recall weighted'] = final_result['recall (weighted)']
+    meta_info['micro'] = final_result['f1-measure (micro)']
+    meta_info['macro'] = final_result['f1-measure (macro)']
+    meta_info['weighted'] = final_result['f1-measure (weighted)']
+    meta_info['avg. loss'] = final_result['loss']
     meta_info['last epochs'] = ', '.join(last_epochs)
     meta_info['best epochs'] = ', '.join(best_epochs)
-    
+
+
+    if not os.path.isfile(meta_out):
+        with open(meta_out, 'a', newline='') as infofile:
+            writer = csv.DictWriter(infofile, fieldnames=meta_field_names)
+            writer.writeheader()
+
     with open(meta_out, 'a', newline='') as infofile:
         writer = csv.DictWriter(infofile, fieldnames=meta_field_names)
         writer.writerow(meta_info)
