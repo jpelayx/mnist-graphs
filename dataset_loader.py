@@ -256,7 +256,7 @@ def get_dataset_params(args):
     ds_params['dataset'] = args.dataset
     ds_params['pre_select_features'] = args.pre_select_features
     if args.features is not None:
-        args.features = args.features.split().sort()
+        args.features = args.features.split()
     ds_params['features'] = args.features
     return ds_params
 
