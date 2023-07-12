@@ -6,6 +6,7 @@ import torchvision.transforms as T
 class SuperPixelGraphSTL10(ColorSLIC):
     ds_name = 'STL10'
     def get_ds_name(self):
+        self.features.sort()
         return  './stl10/{}-n{}-{}-{}'.format('train' if self.train else 'test', 
                                               self.n_segments, 
                                               self.graph_type,

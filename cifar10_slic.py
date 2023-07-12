@@ -7,6 +7,7 @@ class SuperPixelGraphCIFAR10(ColorSLIC):
     ds_name = 'CIFAR10'
     num_classes = 10
     def get_ds_name(self):
+        self.features.sort()
         return  './cifar10/{}-n{}-{}-{}'.format('train' if self.train else 'test', 
                                               self.n_segments, 
                                               self.graph_type,
