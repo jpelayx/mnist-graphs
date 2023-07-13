@@ -46,7 +46,9 @@ if __name__ == '__main__':
                    "precision (micro)", "precision (macro)", "precision (weighted)", 
                    "recall (micro)", "recall (macro)", "recall (weighted)", 
                    "f1-measure (micro)", "f1-measure (macro)", "f1-measure (weighted)", 
-                   "loss", "validation loss"]
+                   "validation f1-measure (micro)", "validation f1-measure (macro)", "validation f1-measure (weighted)", 
+                   "train f1-measure (micro)", "train f1-measure (macro)", "train f1-measure (weighted)", 
+                   "loss", "validation loss", "train loss"]
     meta_field_names = ['model',
                         'num. layers',
                         'num. heads',
@@ -62,19 +64,27 @@ if __name__ == '__main__':
                         'std. dev. of num. of edges', 
                         'best epochs',
                         'last epochs',
-                        'accuracy', 
-                        'precision micro',
-                        'precision macro',
-                        'precision weighted',
-                        'recall micro',
-                        'recall macro',
-                        'recall weighted',
-                        'micro', 
-                        'macro',
-                        'weighted', 
-                        'avg. loss', 
-                        'training time',
-                        'loading time']
+                        'accuracy', 'stdv accuracy', 
+                        'precision micro', 'stdv precision micro',
+                        'precision macro', 'stdv precision macro',
+                        'precision weighted', 'stdv precision weighted',
+                        'recall micro', 'stdv recall micro',
+                        'recall macro', 'stdv recall macro',
+                        'recall weighted', 'stdv recall weighted',
+                        'f1 micro', 'stdv f1 micro', 
+                        'f1 macro', 'stdv f1 macro',
+                        'f1 weighted', 'stdv f1 weighted', 
+                        'validation f1 micro', 'stdv validation f1 micro', 
+                        'validation f1 macro', 'stdv validation f1 macro',
+                        'validation f1 weighted', 'stdv validation f1 weighted', 
+                        'train f1 micro', 'stdv train f1 micro', 
+                        'train f1 macro', 'stdv train f1 macro',
+                        'train f1 weighted', 'stdv train f1 weighted', 
+                        'loss', 'stdv loss', 
+                        'validation loss', 'stdv validation loss', 
+                        'train loss', 'stdv train loss', 
+                        'training time', 'stdv training time',
+                        'loading time', 'stdv loading time']
     t0 = time.time()
     ds, splits, targets = dsl.load_dataset(args)
     loading_time = time.time() - t0
@@ -192,6 +202,7 @@ if __name__ == '__main__':
         for t in range(epochs):
             # 1. train model 
             train(train_loader, model, loss_fn, optimizer, device)
+            train_res = eval(train_loader, model, loss_fn, device, targets)
 
             # 2. evaluate model with validation set, checking if model should stop 
             #    and keeping track of the best epoch so far 
@@ -216,6 +227,14 @@ if __name__ == '__main__':
             test_res = eval(test_loader, model, loss_fn, device, targets)
             test_res['epoch'] = t
             test_res['validation loss'] = validation_res['loss']
+            test_res['validation f1-measure (micro)'] = validation_res['f1-measure (micro)']
+            test_res['validation f1-measure (macro)'] = validation_res['f1-measure (macro)']
+            test_res['validation f1-measure (weighted)'] = validation_res['f1-measure (weighted)']
+            test_res['train loss'] = train_res['loss']
+            test_res['train f1-measure (micro)'] = train_res['f1-measure (micro)']
+            test_res['train f1-measure (macro)'] = train_res['f1-measure (macro)']
+            test_res['train f1-measure (weighted)'] = train_res['f1-measure (weighted)']
+            
             if best_epoch == t:
                 best_test_res = test_res
             if verbose_output:
@@ -253,19 +272,39 @@ if __name__ == '__main__':
 
     final_result = {}
     for field in field_names:
-        final_result[field] = np.average([f[field] for f in best_results])
+        final_result[field] = [f[field] for f in best_results]
     meta_info['training time'] = np.average(training_time)
-    meta_info['accuracy'] = final_result['accuracy']
-    meta_info['precision micro'] = final_result['precision (micro)']
-    meta_info['precision macro'] = final_result['precision (macro)']
-    meta_info['precision weighted'] = final_result['precision (weighted)']
-    meta_info['recall micro'] = final_result['recall (micro)']
-    meta_info['recall macro'] = final_result['recall (macro)']
-    meta_info['recall weighted'] = final_result['recall (weighted)']
-    meta_info['micro'] = final_result['f1-measure (micro)']
-    meta_info['macro'] = final_result['f1-measure (macro)']
-    meta_info['weighted'] = final_result['f1-measure (weighted)']
-    meta_info['avg. loss'] = final_result['loss']
+    meta_info['accuracy'] = np.average(final_result['accuracy'])
+    meta_info['precision micro'] = np.average(final_result['precision (micro)'])
+    meta_info['precision macro'] = np.average(final_result['precision (macro)'])
+    meta_info['precision weighted'] = np.average(final_result['precision (weighted)'])
+    meta_info['recall micro'] = np.average(final_result['recall (micro)'])
+    meta_info['recall macro'] = np.average(final_result['recall (macro)'])
+    meta_info['recall weighted'] = np.average(final_result['recall (weighted)'])
+    meta_info['f1 micro']         = np.average(final_result['f1-measure (micro)'])
+    meta_info['stdv f1 micro']    = np.std(final_result['f1-measure (micro)'])
+    meta_info['f1 macro']         = np.average(final_result['f1-measure (macro)'])
+    meta_info['stdv f1 macro']    = np.std(final_result['f1-measure (macro)'])
+    meta_info['f1 weighted']      = np.average(final_result['f1-measure (weighted)'])
+    meta_info['stdv f1 weighted'] = np.std(final_result['f1-measure (weighted)'])
+    meta_info['validation f1 micro']         = np.average(final_result['validation f1-measure (micro)'])
+    meta_info['stdv validation f1 micro']    = np.std(final_result['validation f1-measure (micro)'])
+    meta_info['validation f1 macro']         = np.average(final_result['validation f1-measure (macro)'])
+    meta_info['stdv validation f1 macro']    = np.std(final_result['validation f1-measure (macro)'])
+    meta_info['validation f1 weighted']      = np.average(final_result['validation f1-measure (weighted)'])
+    meta_info['stdv validation f1 weighted'] = np.std(final_result['validation f1-measure (weighted)'])
+    meta_info['train f1 micro']         = np.average(final_result['train f1-measure (micro)'])
+    meta_info['stdv train f1 micro']    = np.std(final_result['train f1-measure (micro)'])
+    meta_info['train f1 macro']         = np.average(final_result['train f1-measure (macro)'])
+    meta_info['stdv train f1 macro']    = np.std(final_result['train f1-measure (macro)'])
+    meta_info['train f1 weighted']      = np.average(final_result['train f1-measure (weighted)'])
+    meta_info['stdv train f1 weighted'] = np.std(final_result['train f1-measure (weighted)'])
+    meta_info['loss']      = np.average(final_result['loss'])
+    meta_info['stdv loss'] = np.std(final_result['loss'])
+    meta_info['validation loss']      = np.average(final_result['validation loss'])
+    meta_info['stdv validation loss'] = np.std(final_result['validation loss'])
+    meta_info['train loss']      = np.average(final_result['train loss'])
+    meta_info['stdv train loss'] = np.std(final_result['train loss'])
     meta_info['last epochs'] = ', '.join(last_epochs)
     meta_info['best epochs'] = ', '.join(best_epochs)
 
