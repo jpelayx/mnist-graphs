@@ -12,3 +12,4 @@ build
 *.egg-info
 setup.py
 geo_ds/
+imgs/
