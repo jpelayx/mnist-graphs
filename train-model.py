@@ -29,8 +29,8 @@ if __name__ == '__main__':
                         help="learning rate")
     parser.add_argument("--patience", type=int, default=5,
                         help="allowed epochs without min. improvement berfore early stopping. default = 5")
-    parser.add_argument("--min_improvement", type=float, default=0.01,
-                        help="min improvement from previous epoch. default = 0.01")
+    parser.add_argument("--min_improvement", type=float, default=0.001,
+                        help="min improvement from previous epoch. default = 0.001")
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--n_heads", type=int, default=2, 
                         help='number of attention heads in GAT layer. default = 2')
