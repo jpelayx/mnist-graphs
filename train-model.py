@@ -174,16 +174,6 @@ if __name__ == '__main__':
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 
-        for c in np.unique(targets):
-            count_test = np.count_nonzero(targets[test_index] == c)
-            count_validation = np.count_nonzero(targets[validation_index] == c)
-            count_train = np.count_nonzero(targets[train_index] == c)
-            print(f'class {c}')
-            print(f'  test: {count_test} ({count_test/len(test_index)*100:.2f})')
-            print(f'  validation: {count_validation} ({count_validation/len(validation_index)*100:.2f})')
-            print(f'  train: {count_train} ({count_train/len(train_index)*100:.2f})')
-        quit()
-
         if args.model == 'GCN':
             model = GCN(info_ds.num_features, ds_info['classes'], args.n_layers).to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
@@ -201,7 +191,6 @@ if __name__ == '__main__':
 
         fold_hist = []
         epochs_without_improvement = 0
-        previous_validation_res = {}
         best_validation_res = {}
         best_test_res = {}
         best_epoch = 0
@@ -218,7 +207,7 @@ if __name__ == '__main__':
             #    and keeping track of the best epoch so far 
             validation_res = eval(validation_loader, model, loss_fn, device, targets)
             if t > 0:
-                if validation_res['loss'] - previous_validation_res['loss'] > -min_improvement:
+                if validation_res['loss'] - best_validation_res['loss'] > -min_improvement:
                     epochs_without_improvement += 1
                 elif epochs_without_improvement > 0:
                     epochs_without_improvement = 0
@@ -231,7 +220,6 @@ if __name__ == '__main__':
                 best_validation_res = validation_res
                 best_epoch = t
                 checkpoint(model, out_dir, out_file, len(history))
-            previous_validation_res = validation_res
             
             # 3. evaluate model with test set, reporting performance metrics 
             test_res = eval(test_loader, model, loss_fn, device, targets)
