@@ -174,6 +174,16 @@ if __name__ == '__main__':
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 
+        for c in np.unique(targets):
+            count_test = np.count_nonzero(targets[test_index] == c)
+            count_validation = np.count_nonzero(targets[validation_index] == c)
+            count_train = np.count_nonzero(targets[train_index] == c)
+            print(f'class {c}')
+            print(f'  test: {count_test} ({count_test/len(test_index)*100:.2f})')
+            print(f'  validation: {count_validation} ({count_validation/len(validation_index)*100:.2f})')
+            print(f'  train: {count_train} ({count_train/len(train_index)*100:.2f})')
+        quit()
+
         if args.model == 'GCN':
             model = GCN(info_ds.num_features, ds_info['classes'], args.n_layers).to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
