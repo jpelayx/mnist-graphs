@@ -3,10 +3,12 @@ import dataset_loader as dsl
 
 import numpy as np
 import torch
-from torch.utils.data import ConcatDataset, SubsetRandomSampler, Subset
+from torch.utils.data import SubsetRandomSampler, Subset
 from torch_geometric.loader import DataLoader
 
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import train_test_split
+
+random_seed = 54
 
 def checkpoint(model, directory, filename, fold):
     file = directory + filename + f'.fold{fold}' + '.pth'
@@ -18,7 +20,7 @@ if __name__ == '__main__':
     import time
     import os
 
-    torch.manual_seed(42)
+    torch.manual_seed(random_seed)
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="GCN", 
@@ -170,7 +172,10 @@ if __name__ == '__main__':
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
         
         # train data divided into 10% validation and 90% train, maintaning class proportions 
-        train_index, validation_index = train_test_split(np.arange(len(train_validation_index)), test_size=0.1, stratify=Subset(targets, train_validation_index))
+        train_index, validation_index = train_test_split(np.arange(len(train_validation_index)), 
+                                                         test_size=0.1, 
+                                                         stratify=Subset(targets, train_validation_index),
+                                                         random_state=random_seed)
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 

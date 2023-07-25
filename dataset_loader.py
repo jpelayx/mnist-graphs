@@ -15,6 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 
 import argparse
 
+random_seed = 54
 
 def load_dataset(args):
     """
@@ -160,7 +161,7 @@ def load_graph_ds(params):
     else:
         targets = ds.get_targets()
         ds = ConcatDataset([ds])
-    splits = StratifiedKFold(n_splits=n_splits).split(np.zeros(len(targets)), targets)
+    splits = StratifiedKFold(n_splits=n_splits, random_state=random_seed).split(np.zeros(len(targets)), targets)
     return ds, splits, targets
 
 def load_image_ds(params):
@@ -193,7 +194,7 @@ def load_image_ds(params):
     else:
         print('No dataset called: \"' + dataset + '\" available.')
         return None
-    splits = StratifiedKFold(n_splits=5).split(np.zeros(len(targets)), targets)
+    splits = StratifiedKFold(n_splits=5, random_state=random_seed).split(np.zeros(len(targets)), targets)
     return ds, splits, targets
 
 def dataset_info(args):
