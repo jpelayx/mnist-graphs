@@ -161,7 +161,7 @@ def load_graph_ds(params):
     else:
         targets = ds.get_targets()
         ds = ConcatDataset([ds])
-    splits = StratifiedKFold(n_splits=n_splits, random_state=random_seed).split(np.zeros(len(targets)), targets)
+    splits = StratifiedKFold(n_splits=n_splits, random_state=random_seed, shuffle=True).split(np.zeros(len(targets)), targets)
     return ds, splits, targets
 
 def load_image_ds(params):
@@ -194,7 +194,7 @@ def load_image_ds(params):
     else:
         print('No dataset called: \"' + dataset + '\" available.')
         return None
-    splits = StratifiedKFold(n_splits=5, random_state=random_seed).split(np.zeros(len(targets)), targets)
+    splits = StratifiedKFold(n_splits=5, random_state=random_seed, shuffle=True).split(np.zeros(len(targets)), targets)
     return ds, splits, targets
 
 def dataset_info(args):

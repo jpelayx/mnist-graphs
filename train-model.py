@@ -175,7 +175,8 @@ if __name__ == '__main__':
         train_index, validation_index = train_test_split(np.arange(len(train_validation_index)), 
                                                          test_size=0.1, 
                                                          stratify=Subset(targets, train_validation_index),
-                                                         random_state=random_seed)
+                                                         random_state=random_seed,
+                                                         shuffle=True)
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 
