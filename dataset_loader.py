@@ -15,7 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 
 import argparse
 
-random_seed = 54
+random_seed = 42
 
 def load_dataset(args):
     """

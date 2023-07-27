@@ -8,7 +8,7 @@ from torch_geometric.loader import DataLoader
 
 from sklearn.model_selection import train_test_split
 
-random_seed = 54
+random_seed = 42
 
 def checkpoint(model, directory, filename, fold):
     file = directory + filename + f'.fold{fold}' + '.pth'
