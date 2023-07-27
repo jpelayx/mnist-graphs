@@ -33,6 +33,8 @@ if __name__ == '__main__':
                         help="allowed epochs without min. improvement berfore early stopping. default = 5")
     parser.add_argument("--min_improvement", type=float, default=0.001,
                         help="min improvement from previous epoch. default = 0.001")
+    parser.add_argument("--validation_size", type=float, default=0.1,
+                        help="fraction of validation data in the train/validation split")
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--n_heads", type=int, default=2, 
                         help='number of attention heads in GAT layer. default = 2')
@@ -171,9 +173,9 @@ if __name__ == '__main__':
         # test data 
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
         
-        # train data divided into 10% validation and 90% train, maintaning class proportions 
+        # train data divided into validation_size validation and (1-validation_size) train, maintaning class proportions 
         train_index, validation_index = train_test_split(np.arange(len(train_validation_index)), 
-                                                         test_size=0.1, 
+                                                         test_size=args.validation_size, 
                                                          stratify=Subset(targets, train_validation_index),
                                                          random_state=random_seed,
                                                          shuffle=True)
