@@ -22,12 +22,13 @@ if __name__ == '__main__':
 
 
     for ds in dss:
-        basedir = f'GAT/{ds}'
-        out_file = basedir + f'{ds}-heads-modelsizeinfo.csv'
+        basedir = f'GAT/{ds}/'
+        out_file = f'GAT/{ds}-heads-modelsizeinfo.csv'
         with open(out_file, 'w', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=out_fields)
             writer.writeheader()
         sizes = []
+        print(ds)
         for h in num_heads:
             fold_sizes = []
             for f in range(5):
@@ -37,8 +38,10 @@ if __name__ == '__main__':
                 for layer in model:
                     layer_size = np.prod(model[layer].shape) * model[layer].element_size()
                     fold_size += layer_size
+                fold_sizes.append(fold_size)
             mean_size = np.mean(fold_sizes)
             sizes.append(mean_size)
+            print(h, mean_size)
             with open(out_file, 'a', newline='') as file:
                 writer = csv.DictWriter(file, fieldnames=out_fields)
                 writer.writerow({'num. of heads': h, 'model size': mean_size})
