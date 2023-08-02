@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import SubsetRandomSampler, Subset
 from torch_geometric.loader import DataLoader
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 
 random_seed = 42
 
@@ -173,12 +173,12 @@ if __name__ == '__main__':
         # test data 
         test_loader  = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(test_index))
         
-        # train data divided into validation_size validation and (1-validation_size) train, maintaning class proportions 
-        train_index, validation_index = train_test_split(np.arange(len(train_validation_index)), 
-                                                         test_size=args.validation_size, 
-                                                         stratify=Subset(targets, train_validation_index),
-                                                         random_state=random_seed,
-                                                         shuffle=True)
+        # train data divided into validation_size% validation and (1-validation_size)% train, maintaning class proportions 
+        sss = StratifiedShuffleSplit(n_splits=1, 
+                                     test_size=args.validation_size,
+                                     random_state=random_seed)
+        train_index, validation_index = sss.split(np.zeros(len(train_validation_index)),
+                                                  Subset(targets, train_validation_index)).__next__()
         train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
         validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 
