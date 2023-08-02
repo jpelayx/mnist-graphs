@@ -240,7 +240,7 @@ def set_dataset_arguments(parser):
                         help="SLIC0, SLIC")
     parser.add_argument("--features", type=str, default=None,
                         help="space separated list of features. options are: avg_color, std_deviation_color, centroid, std_deviation_centroid, num_pixels. (default: avg_color centroid)")
-    parser.add_argument("--dataset", default='mnist',
+    parser.add_argument("--dataset", "-ds", default='mnist',
                         help="dataset to train against")
     parser.add_argument("--pre_select_features", action='store_true',
                         help="only save selected features when loading dataset")
