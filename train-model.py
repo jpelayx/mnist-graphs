@@ -33,7 +33,7 @@ if __name__ == '__main__':
                         help="allowed epochs without min. improvement berfore early stopping. default = 5")
     parser.add_argument("--min_improvement", type=float, default=0.001,
                         help="min improvement from previous epoch. default = 0.001")
-    parser.add_argument("--validation_size", type=float, default=0.2,
+    parser.add_argument("--validation_size", type=float, default=0.1,
                         help="fraction of validation data in the train/validation split")
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--n_heads", type=int, default=2, 
