@@ -179,8 +179,9 @@ if __name__ == '__main__':
                                      random_state=random_seed)
         train_index, validation_index = sss.split(np.zeros(len(train_validation_index)),
                                                   Subset(targets, train_validation_index)).__next__()
-        train_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(train_index))
-        validation_loader = DataLoader(ds, batch_size=64, sampler=SubsetRandomSampler(validation_index))
+        train_validation_ds = Subset(ds, train_validation_index)
+        train_loader = DataLoader(train_validation_index, batch_size=64, sampler=SubsetRandomSampler(train_index))
+        validation_loader = DataLoader(train_validation_index, batch_size=64, sampler=SubsetRandomSampler(validation_index))
 
         if args.model == 'GCN':
             model = GCN(info_ds.num_features, ds_info['classes'], args.n_layers).to(device)
