@@ -38,8 +38,8 @@ if __name__ == '__main__':
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--n_heads", type=int, default=2, 
                         help='number of attention heads in GAT layer. default = 2')
-    parser.add_argument('--n_layers', type=int, default=4, 
-                        help='number of stacked conv. layers (GAT or GCN). default = 4')
+    parser.add_argument('--n_layers', type=int, default=3, 
+                        help='number of stacked conv. layers (GAT or GCN). default = 3')
     parser.add_argument('--info_filename', '-f', type=str, default='training_info', 
                         help='name of file where training information is stored')
     parser = dsl.set_dataset_arguments(parser)
