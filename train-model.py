@@ -21,6 +21,7 @@ if __name__ == '__main__':
     import os
 
     torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="GCN", 
