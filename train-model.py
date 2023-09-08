@@ -25,7 +25,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="GCN", 
-                        help="the model to train: GCN, GAT or CNN. default = GCN")
+                        help="the model to train: GCN, GAT, CNN, AlexNet. default = GCN")
     parser.add_argument("--epochs", "-e", type=int, default=100,
                         help="max number of training epochs")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.001,
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     info_ds = ds.datasets[0]
     meta_info['model'] = args.model
     meta_info['loading time'] = loading_time
-    if args.model != 'CNN':
+    if args.model not in ['CNN', 'AlexNet']:
         meta_info['num. layers'] = args.n_layers
         if args.model == 'GAT':
             meta_info['num. heads'] = args.n_heads
@@ -131,8 +131,8 @@ if __name__ == '__main__':
         meta_info['features'] = '-'
     
     out_dir = f'./{args.model}/{args.dataset}/'
-    if args.model == 'CNN':
-        out_file = 'cnn'
+    if args.model in ['CNN',  'AlexNet']:
+        out_file = args.model
     elif args.model == 'GAT':
         out_file = 'l{}h{}n{}-{}-{}-{}'.format(args.n_layers, 
                                                    args.n_heads, 
@@ -194,6 +194,10 @@ if __name__ == '__main__':
             loss_fn = torch.nn.CrossEntropyLoss()
         elif args.model == CNN:
             model = CNN(ds_info['channels'], ds_info['classes'], ds_info['img_size']).to(device)
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+            loss_fn = torch.nn.CrossEntropyLoss()
+        elif args.model == 'AlexNet':
+            model = torch.hub.load('pytorch/vision:v0.10.0', 'alexnet', weights=None)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
             loss_fn = torch.nn.CrossEntropyLoss()
         else:
