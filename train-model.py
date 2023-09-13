@@ -197,7 +197,7 @@ if __name__ == '__main__':
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
             loss_fn = torch.nn.CrossEntropyLoss()
         elif args.model == 'AlexNet':
-            model = torch.hub.load('pytorch/vision:v0.10.0', 'alexnet', weights=None)
+            model = torch.hub.load('pytorch/vision:v0.10.0', 'alexnet', weights=None).to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
             loss_fn = torch.nn.CrossEntropyLoss()
         else:
