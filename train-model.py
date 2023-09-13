@@ -132,7 +132,7 @@ if __name__ == '__main__':
     
     out_dir = f'./{args.model}/{args.dataset}/'
     if args.model in ['CNN',  'AlexNet']:
-        out_file = args.model
+        out_file = '{}-lr{}'.format(args.model, args.learning_rate)
     elif args.model == 'GAT':
         out_file = 'l{}h{}n{}-{}-{}-{}'.format(args.n_layers, 
                                                    args.n_heads, 
