@@ -30,8 +30,8 @@ if __name__ == '__main__':
                         help="max number of training epochs")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.001,
                         help="learning rate")
-    parser.add_argument("--patience", type=int, default=5,
-                        help="allowed epochs without min. improvement berfore early stopping. default = 5")
+    parser.add_argument("--patience", type=int, default=-1,
+                        help="allowed epochs without min. improvement berfore early stopping, negative number disables early stopping. default = -1, no early stopping.")
     parser.add_argument("--min_improvement", type=float, default=0.001,
                         help="min improvement from previous epoch. default = 0.001")
     parser.add_argument("--validation_size", type=float, default=0.1,
@@ -254,7 +254,7 @@ if __name__ == '__main__':
             fold_hist.append(test_res)
 
             # early stop
-            if epochs_without_improvement > patience:
+            if patience > 0 and epochs_without_improvement > patience:
                 print(f'Stopped at epoch {t}')
                 break
 
