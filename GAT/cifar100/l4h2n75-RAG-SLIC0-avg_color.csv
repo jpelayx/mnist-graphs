@@ -1,0 +1,1 @@
+epoch,accuracy,precision (micro),precision (macro),precision (weighted),recall (micro),recall (macro),recall (weighted),f1-measure (micro),f1-measure (macro),f1-measure (weighted),validation f1-measure (micro),validation f1-measure (macro),validation f1-measure (weighted),train f1-measure (micro),train f1-measure (macro),train f1-measure (weighted),loss,validation loss,train loss
