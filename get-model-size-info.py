@@ -14,13 +14,13 @@ if __name__ == '__main__':
     ]
 
     ids = ['best model']
-    basedir = 'AlexNet'
+    basedir = 'GCN'
     model_paths = {
-        'mnist': ['AlexNet-lr1e-05'],
-        'fashion_mnist': ['AlexNet-lr1e-05'],
-        'cifar10': ['AlexNet-lr1e-05'],
-        'cifar100': ['AlexNet-lr1e-05'],
-        'stl10': ['AlexNet-lr1e-05']
+        'mnist': ['l3n50-RAG-SLIC0-avg_color-centroid-num_pixels-std_deviation_centroid-std_deviation_color'],
+        'fashion_mnist': ['l3n200-1NNFeature-SLIC0-avg_color-centroid-num_pixels-std_deviation_centroid-std_deviation_color'],
+        'cifar10': ['l3n400-1NNFeature-SLIC0-avg_color-avg_color_hsv-centroid-num_pixels-std_deviation_centroid-std_deviation_color-std_deviation_color_hsv'],
+        'cifar100': ['l3n200-1NNFeature-SLIC0-avg_color-avg_color_hsv-centroid-std_deviation_centroid-std_deviation_color-std_deviation_color_hsv'],
+        'stl10': ['l3n400-2NNFeature-SLIC0-avg_color-avg_color_hsv-centroid-std_deviation_centroid-std_deviation_color']
     }
 
     out_fields = [
