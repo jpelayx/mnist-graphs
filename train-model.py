@@ -100,7 +100,7 @@ if __name__ == '__main__':
     info_ds = ds.datasets[0]
     meta_info['model'] = args.model
     meta_info['loading time'] = loading_time
-    if args.model not in ['CNN', 'AlexNet']:
+    if args.model not in ['CNN', 'AlexNet', 'EfficientNet']:
         meta_info['num. layers'] = args.n_layers
         if args.model == 'GAT':
             meta_info['num. heads'] = args.n_heads
@@ -202,7 +202,7 @@ if __name__ == '__main__':
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
             loss_fn = torch.nn.CrossEntropyLoss()
         elif args.model == 'EfficientNet':
-            model = efficientnet_b0()
+            model = efficientnet_b0().to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
             loss_fn = torch.nn.CrossEntropyLoss()
         else:
