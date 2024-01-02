@@ -1,4 +1,5 @@
 from models import GCN, GAT, CNN, train, eval
+from torchvision.models.efficientnet import EfficientNet, efficientnet_b0
 import dataset_loader as dsl
 
 import numpy as np
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", "-m", type=str, default="GCN", 
-                        help="the model to train: GCN, GAT, CNN, AlexNet. default = GCN")
+                        help="the model to train: GCN, GAT, CNN, AlexNet, EfficientNet. default = GCN")
     parser.add_argument("--epochs", "-e", type=int, default=100,
                         help="max number of training epochs")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.001,
@@ -131,7 +132,7 @@ if __name__ == '__main__':
         meta_info['features'] = '-'
     
     out_dir = f'./{args.model}/{args.dataset}/'
-    if args.model in ['CNN',  'AlexNet']:
+    if args.model in ['CNN',  'AlexNet', 'EfficientNet']:
         out_file = '{}-lr{}'.format(args.model, args.learning_rate)
     elif args.model == 'GAT':
         out_file = 'l{}h{}n{}-{}-{}-{}'.format(args.n_layers, 
@@ -198,6 +199,10 @@ if __name__ == '__main__':
             loss_fn = torch.nn.CrossEntropyLoss()
         elif args.model == 'AlexNet':
             model = torch.hub.load('pytorch/vision:v0.10.0', 'alexnet', weights=None).to(device)
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+            loss_fn = torch.nn.CrossEntropyLoss()
+        elif args.model == 'EfficientNet':
+            model = efficientnet_b0()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
             loss_fn = torch.nn.CrossEntropyLoss()
         else:

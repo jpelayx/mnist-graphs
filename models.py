@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Conv2d
 from torchvision.models.alexnet import AlexNet
+from torchvision.models.efficientnet import EfficientNet, efficientnet_b0
 from torch_geometric.nn import GCNConv, GATConv, global_mean_pool, global_max_pool
 
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
@@ -85,7 +86,7 @@ class CNN(torch.nn.Module):
         return out 
 
 def train(trainloader, model, loss_fn, optimizer, device):
-    if type(model) in [CNN, AlexNet]:
+    if type(model) in [CNN, AlexNet, EfficientNet]:
         train_images(model, trainloader, loss_fn, optimizer, device)
     else: # GCN, GAT
         train_graphs(model, trainloader, loss_fn, optimizer, device)
@@ -115,7 +116,7 @@ def train_images(model, trainloader, loss_fn, optimizer, device):
         optimizer.step()
 
 def eval(testloader, model, loss_fn, device, labels):
-    if type(model) in [CNN, AlexNet]:
+    if type(model) in [CNN, AlexNet, EfficientNet]:
         return eval_images(testloader, model, loss_fn, device, labels)
     else:
         return eval_graphs(testloader, model, loss_fn, device, labels)

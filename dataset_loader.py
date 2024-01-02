@@ -28,7 +28,7 @@ def load_dataset(args):
     params = get_dataset_params(args)
 
     try:
-        load_graphs = args.model not in ['CNN', 'AlexNet']
+        load_graphs = args.model not in ['CNN', 'AlexNet', 'EfficientNet']
     except:
         load_graphs = True
     
@@ -36,7 +36,7 @@ def load_dataset(args):
         return load_graph_ds(params)
     elif args.model == 'CNN':
         return load_image_ds(params)
-    elif args.model == 'AlexNet':
+    elif args.model in ['AlexNet', 'EfficientNet']:
         return load_rgb_image_ds(params)
 
 def load_graph_ds(params):
