@@ -16,11 +16,11 @@ if __name__ == '__main__':
     ids = ['best model']
     basedir = 'EfficientNet'
     model_paths = {
-        'mnist': ['EfficientNet-lre-05.csv'],
-        'fashion_mnist': ['EfficientNet-lre-05.csv'],
-        'cifar10': ['EfficientNet-lre-05.csv'],
-        'cifar100': ['EfficientNet-lre-05.csv'],
-        'stl10': ['EfficientNet-lre-05.csv']
+        'mnist': ['EfficientNet-lr1e-05'],
+        'fashion_mnist': ['EfficientNet-lr1e-05'],
+        'cifar10': ['EfficientNet-lr1e-05'],
+        'cifar100': ['EfficientNet-lr1e-05'],
+        'stl10': ['EfficientNet-lr1e-05']
     }
 
     out_fields = [
