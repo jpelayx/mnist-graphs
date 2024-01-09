@@ -14,13 +14,13 @@ if __name__ == '__main__':
     ]
 
     ids = ['best model']
-    basedir = 'GCN'
+    basedir = 'EfficientNet'
     model_paths = {
-        'mnist': ['l3n50-RAG-SLIC0-avg_color-centroid-num_pixels-std_deviation_centroid-std_deviation_color'],
-        'fashion_mnist': ['l3n200-1NNFeature-SLIC0-avg_color-centroid-num_pixels-std_deviation_centroid-std_deviation_color'],
-        'cifar10': ['l3n400-1NNFeature-SLIC0-avg_color-avg_color_hsv-centroid-num_pixels-std_deviation_centroid-std_deviation_color-std_deviation_color_hsv'],
-        'cifar100': ['l3n200-1NNFeature-SLIC0-avg_color-avg_color_hsv-centroid-std_deviation_centroid-std_deviation_color-std_deviation_color_hsv'],
-        'stl10': ['l3n400-2NNFeature-SLIC0-avg_color-avg_color_hsv-centroid-std_deviation_centroid-std_deviation_color']
+        'mnist': ['EfficientNet-lre-05.csv'],
+        'fashion_mnist': ['EfficientNet-lre-05.csv'],
+        'cifar10': ['EfficientNet-lre-05.csv'],
+        'cifar100': ['EfficientNet-lre-05.csv'],
+        'stl10': ['EfficientNet-lre-05.csv']
     }
 
     out_fields = [
