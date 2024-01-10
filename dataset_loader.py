@@ -202,11 +202,11 @@ def load_image_ds(params):
 def load_rgb_image_ds(params):
     dataset = params['dataset']
     transform_grey  = T.Compose([T.ToTensor(),
-                                 T.Resize(224, antialias=True),
+                                 T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
                                  T.Lambda(lambda x: x.repeat(3, 1, 1) ), 
                                  T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     transform_color = T.Compose([T.ToTensor(),
-                                 T.Resize(224, antialias=True),
+                                 T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
                                  T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     if dataset == 'mnist':
         train_ds = datasets.MNIST('./mnist/train', train=True, download=True, transform=transform_grey)
