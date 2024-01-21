@@ -32,6 +32,26 @@ class GCN(torch.nn.Module):
                             global_max_pool(hidden, batch_index)], dim=1)
         out = self.out(hidden)
         return out 
+
+class GCNFeatures(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, num_layers):
+        super(GCNFeature, self).__init__()
+        # using architecture inspired by MNISTSuperpixels example 
+        # (https://medium.com/@rtsrumi07/understanding-graph-neural-network-with-hands-on-example-part-2-139a691ebeac)
+        hidden_channel_size = 64 
+        self.initial_conv = GCNConv(in_channels, hidden_channel_size)
+        self.hidden_layers = nn.ModuleList([])
+        for _ in range(num_layers - 1):
+            self.hidden_layers.append(GCNConv(hidden_channel_size, hidden_channel_size))
+
+    def forward(self, x, edge_index, batch_index):
+        hidden = self.initial_conv(x, edge_index)
+        hidden = F.relu(hidden)
+        for hidden_layer in self.hidden_layers:
+            hidden = hidden_layer(hidden, edge_index)
+            hidden = F.relu(hidden)
+        out = hidden
+        return out 
     
 class GAT(torch.nn.Module):
     def __init__(self, in_channels, out_channels, num_heads, num_layers):
@@ -55,6 +75,27 @@ class GAT(torch.nn.Module):
         hidden = torch.cat([global_mean_pool(hidden, batch_index),
                             global_max_pool(hidden, batch_index)], dim=1)
         out = self.out(hidden)
+        return out 
+
+class GATFeatures(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, num_heads, num_layers):
+        super(GATFeatures, self).__init__()
+        in_out_size = 32
+        out_size = 64
+        self.initial_conv = GATConv(in_channels, in_out_size, heads=num_heads)
+        in_size = in_out_size * num_heads
+        self.hidden_layers = nn.ModuleList([]) 
+        for _ in range(num_layers-1):
+            self.hidden_layers.append(GATConv(in_size, out_size, heads=num_heads))
+            in_size = out_size * num_heads
+
+    def forward(self, x, edge_index, batch_index):
+        hidden = self.initial_conv(x, edge_index)
+        hidden = F.relu(hidden)
+        for gat in self.hidden_layers:
+            hidden = gat(hidden, edge_index)
+            hidden = F.relu(hidden)
+        out = hidden
         return out 
     
 class CNN(torch.nn.Module):
