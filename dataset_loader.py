@@ -201,34 +201,44 @@ def load_image_ds(params):
 
 def load_rgb_image_ds(params):
     dataset = params['dataset']
-    transform_grey  = T.Compose([T.ToTensor(),
-                                 T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
-                                 T.Lambda(lambda x: x.repeat(3, 1, 1) ), 
-                                 T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    transform_color = T.Compose([T.ToTensor(),
-                                 T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
-                                 T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     if dataset == 'mnist':
+        transform_grey  = T.Compose([T.ToTensor(),
+                                     T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
+                                     T.Lambda(lambda x: x.repeat(3, 1, 1) ), 
+                                     T.Normalize(mean=[0.131, 0.131, 0.131], std=[0.308, 0.308, 0.308])])
         train_ds = datasets.MNIST('./mnist/train', train=True, download=True, transform=transform_grey)
         test_ds  = datasets.MNIST('./mnist/test', train=False, download=True, transform=transform_grey)
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif dataset == 'fashion_mnist':
+        transform_grey  = T.Compose([T.ToTensor(),
+                                     T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
+                                     T.Lambda(lambda x: x.repeat(3, 1, 1) ), 
+                                     T.Normalize(mean=[0.286, 0.286, 0.286], std=[0.353, 0.353, 0.353])])
         train_ds = datasets.FashionMNIST('./fashion_mnist/train', train=True, download=True, transform=transform_grey)
         test_ds  = datasets.FashionMNIST('./fashion_mnist/test', train=False, download=True, transform=transform_grey)
         targets = torch.cat((train_ds.targets, test_ds.targets))
         ds = ConcatDataset([train_ds, test_ds])
     elif dataset == 'cifar10':
+        transform_color = T.Compose([T.ToTensor(),
+                                    T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
+                                    T.Normalize(mean=[0.491, 0.482, 0.446], std=[0.247, 0.243, 0.261])])
         train_ds = datasets.CIFAR10('./cifar10/train', train=True, download=True, transform=transform_color)
         test_ds  = datasets.CIFAR10('./cifar10/test', train=False, download=True, transform=transform_color)
         targets = torch.cat((torch.tensor(train_ds.targets), torch.tensor(test_ds.targets)))
         ds = ConcatDataset([train_ds, test_ds])
     elif dataset == 'cifar100':
+        transform_color = T.Compose([T.ToTensor(),
+                                    T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
+                                    T.Normalize(mean=[0.507, 0.486, 0.441], std=[0.267, 0.256, 0.276])])
         train_ds = datasets.CIFAR100('./cifar100/train', train=True, download=True, transform=transform_color)
         test_ds  = datasets.CIFAR100('./cifar100/test', train=False, download=True, transform=transform_color)
         targets = torch.cat((torch.tensor(train_ds.targets), torch.tensor(test_ds.targets)))
         ds = ConcatDataset([train_ds, test_ds])
     elif dataset == 'stl10':
+        transform_color = T.Compose([T.ToTensor(),
+                                    T.Resize(224, antialias=True, interpolation=T.InterpolationMode.BICUBIC),
+                                    T.Normalize(mean=[0.443, 0.446, 0.446], std=[0.266, 0.264, 0.263])])
         train_ds = datasets.STL10('./stl10/train', split='train', download=True, transform=transform_color)
         test_ds  = datasets.STL10('./stl10/test', split='test', download=True, transform=transform_color)
         targets = torch.cat((torch.from_numpy(train_ds.labels), torch.from_numpy(test_ds.labels)))
