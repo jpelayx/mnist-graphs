@@ -13,3 +13,4 @@ build
 setup.py
 geo_ds/
 imgs/
+.venv
