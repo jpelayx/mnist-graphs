@@ -35,7 +35,7 @@ class GCN(torch.nn.Module):
 
 class GCNFeatures(torch.nn.Module):
     def __init__(self, in_channels, out_channels, num_layers):
-        super(GCNFeature, self).__init__()
+        super(GCNFeatures, self).__init__()
         # using architecture inspired by MNISTSuperpixels example 
         # (https://medium.com/@rtsrumi07/understanding-graph-neural-network-with-hands-on-example-part-2-139a691ebeac)
         hidden_channel_size = 64 
